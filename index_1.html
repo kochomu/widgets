@@ -1,0 +1,883 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>メモ箱</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="メモ箱">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1E2340">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: lock-screen style — big clock on a deep gradient, frosted widget cards stacked in one column: capture bar, ToDo, 保管庫 */
+:root {
+  --bg-top: #1E2340;
+  --bg-bot: #43307A;
+  --glass: rgba(255,255,255,.10);
+  --glass-strong: rgba(255,255,255,.16);
+  --glass-line: rgba(255,255,255,.16);
+  --ink: #F4F3FA;
+  --muted: rgba(244,243,250,.62);
+  --accent: #FFD666;
+  --accent-ink: #2A2140;
+  --danger: #FF8A7A;
+  --ok: #7FE0B4;
+  --font: "Zen Kaku Gothic New", -apple-system, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", system-ui, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { background: #2C2A5C; }
+html, body { margin: 0; }
+body {
+  font-family: var(--font); color: var(--ink); font-size: 15px; line-height: 1.55;
+  background: linear-gradient(170deg, var(--bg-top) 0%, #2C2A5C 45%, var(--bg-bot) 100%);
+  min-height: 100vh;
+  background-color: var(--bg-top);
+  -webkit-tap-highlight-color: transparent;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.wrap { max-width: 560px; margin: 0 auto; padding-inline: 16px; padding-block: 18px 48px; display: flex; flex-direction: column; gap: 14px; }
+button { font: inherit; color: inherit; }
+button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* clock */
+.clock { text-align: center; padding-block: 6px 4px; }
+.clock .date { font-size: 15px; font-weight: 500; color: var(--muted); letter-spacing: .04em; }
+.clock .time { font-size: 64px; font-weight: 700; line-height: 1.05; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+
+.widget { background: var(--glass); border: 1px solid var(--glass-line); border-radius: 22px; padding: 14px; display: flex; flex-direction: column; gap: 10px; -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
+.w-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.w-head h2 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .08em; color: var(--muted); }
+.w-head .count { font-size: 12px; color: var(--muted); }
+
+/* capture */
+.seg { display: inline-grid; grid-template-columns: 1fr 1fr; background: rgba(0,0,0,.22); border-radius: 10px; padding: 3px; gap: 3px; }
+.seg button { border: 0; background: transparent; padding: 5px 14px; border-radius: 8px; font-size: 13px; font-weight: 700; color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--glass-strong); color: var(--ink); }
+.capture-row { display: flex; gap: 8px; align-items: flex-end; }
+.capture-row textarea { flex: 1; min-width: 0; resize: none; border: 1px solid var(--glass-line); background: rgba(0,0,0,.22); color: var(--ink); border-radius: 14px; padding: 11px 12px; font: inherit; font-size: 16px; line-height: 1.45; max-height: 40vh; }
+.capture-row textarea::placeholder { color: var(--muted); }
+.round { width: 44px; height: 44px; flex: none; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer; }
+.round.attach { background: var(--glass-strong); }
+.round.send { background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 20px; }
+.round.send:disabled { opacity: .4; cursor: default; }
+.round svg { width: 22px; height: 22px; }
+.capture-extra { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.capture-extra input[type="date"] { border: 1px solid var(--glass-line); background: rgba(0,0,0,.22); color: var(--ink); border-radius: 10px; padding: 6px 8px; font: inherit; font-size: 14px; }
+.pending { display: flex; gap: 8px; align-items: center; }
+.pending img { width: 56px; height: 56px; object-fit: cover; border-radius: 10px; }
+
+/* todo */
+.todos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.todo { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; align-items: center; padding: 7px 2px; border-top: 1px solid var(--glass-line); }
+.todo:first-child { border-top: 0; }
+.check { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--muted); background: transparent; cursor: pointer; display: grid; place-items: center; padding: 0; }
+.todo.done .check { background: var(--ok); border-color: var(--ok); }
+.todo.done .check::after { content: ""; width: 6px; height: 11px; border: solid var(--accent-ink); border-width: 0 2.5px 2.5px 0; transform: translateY(-1px) rotate(45deg); }
+.todo .t { min-width: 0; overflow-wrap: anywhere; }
+.todo.done .t { color: var(--muted); text-decoration: line-through; }
+.due { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.due.over { color: var(--danger); font-weight: 700; }
+.due.today { color: var(--accent); font-weight: 700; }
+.x { border: 0; background: transparent; color: var(--muted); font-size: 18px; width: 30px; height: 30px; cursor: pointer; border-radius: 8px; }
+.linkbtn { border: 0; background: none; color: var(--muted); font-size: 13px; cursor: pointer; padding: 4px 0; text-align: left; text-decoration: underline; text-underline-offset: 3px; }
+
+/* vault */
+.filters { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.filters::-webkit-scrollbar { display: none; }
+.chip { border: 1px solid var(--glass-line); background: transparent; color: var(--ink); border-radius: 999px; padding: 4px 11px; font-size: 13px; white-space: nowrap; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg-top); border-color: var(--ink); }
+.search { border: 1px solid var(--glass-line); background: rgba(0,0,0,.22); color: var(--ink); border-radius: 12px; padding: 9px 12px; font: inherit; font-size: 16px; width: 100%; }
+.search::placeholder { color: var(--muted); }
+.items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.item { background: rgba(0,0,0,.20); border-radius: 16px; padding: 11px 12px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; border: 1px solid transparent; }
+.item.open { border-color: var(--glass-line); background: rgba(0,0,0,.30); }
+.item.done { opacity: .55; }
+.item .top { display: flex; gap: 8px; align-items: flex-start; }
+.kind { font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 6px; background: var(--glass-strong); color: var(--muted); flex: none; margin-top: 2px; }
+.item .body { min-width: 0; flex: 1; overflow-wrap: anywhere; white-space: pre-wrap; }
+.item .body a { color: var(--accent); }
+.item .domain { font-size: 12px; color: var(--muted); }
+.item img.photo { width: 100%; max-height: 260px; object-fit: cover; border-radius: 12px; }
+.meta { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 12px; color: var(--muted); }
+.tag { font-size: 11px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--glass-line); color: var(--ink); }
+.pin { color: var(--accent); }
+.panel { display: flex; flex-direction: column; gap: 10px; padding-top: 8px; border-top: 1px dashed var(--glass-line); cursor: default; }
+.panel h3 { margin: 0; font-size: 12px; color: var(--muted); font-weight: 700; letter-spacing: .06em; }
+.ai-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.ai-grid button { border: 1px solid rgba(255,214,102,.45); background: rgba(255,214,102,.10); color: var(--ink); border-radius: 12px; padding: 9px 4px; font-size: 13px; cursor: pointer; }
+.actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.actions button { border: 1px solid var(--glass-line); background: var(--glass); border-radius: 10px; padding: 7px 11px; font-size: 13px; cursor: pointer; }
+.actions .del { color: var(--danger); border-color: rgba(255,138,122,.5); }
+.tagedit { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.tagedit input { border: 1px solid var(--glass-line); background: rgba(0,0,0,.22); color: var(--ink); border-radius: 999px; padding: 4px 10px; font: inherit; font-size: 13px; width: 8em; }
+.edit-area { width: 100%; resize: vertical; border: 1px solid var(--glass-line); background: rgba(0,0,0,.25); color: var(--ink); border-radius: 12px; padding: 9px 10px; font: inherit; font-size: 16px; min-height: 5em; }
+.empty { text-align: center; color: var(--muted); padding: 18px 8px; font-size: 14px; }
+.empty strong { display: block; color: var(--ink); margin-bottom: 2px; }
+
+.foot { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.foot button { border: 1px solid var(--glass-line); background: var(--glass); border-radius: 10px; padding: 8px 12px; font-size: 13px; cursor: pointer; }
+.note { font-size: 12px; color: var(--muted); text-align: center; margin: 0; }
+
+/* game */
+:root { --r-c: #B9BECB; --r-u: #7FE0B4; --r-r: #7FB8FF; --r-e: #D9A2FF; }
+.pl-top { display: flex; align-items: center; gap: 14px; }
+.lv { font-size: 30px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.lv small { font-size: 13px; color: var(--muted); font-weight: 500; margin-right: 2px; }
+.pl-title { display: flex; flex-direction: column; min-width: 0; }
+.pl-title b { font-size: 16px; }
+.pl-title span { font-size: 12px; color: var(--muted); }
+.bar { height: 8px; border-radius: 4px; background: rgba(0,0,0,.28); overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 4px; background: var(--accent); transition: width .4s ease; }
+.xpnote { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; }
+.stats5 { display: grid; grid-template-columns: 4.2em 1fr 3.2em; gap: 6px 10px; align-items: center; font-size: 13px; }
+.stats5 .bar { height: 6px; }
+.stats5 .bar i { background: var(--ok); }
+.stats5 .slv { text-align: right; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.record h3 { margin: 6px 0 4px; font-size: 12px; color: var(--muted); letter-spacing: .06em; }
+.ach { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.ach div { background: rgba(0,0,0,.22); border-radius: 12px; padding: 8px 10px; font-size: 12px; color: var(--muted); }
+.ach div b { display: block; color: var(--ink); font-size: 13px; }
+.ach div.lock { opacity: .4; }
+.ach div.got { border: 1px solid rgba(255,214,102,.5); }
+.log { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+.log li { display: flex; justify-content: space-between; gap: 8px; padding: 5px 0; border-top: 1px solid var(--glass-line); }
+.log li:first-child { border-top: 0; }
+.log li span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.log li span:last-child { color: var(--accent); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.rb { display: inline-block; font-size: 10px; font-weight: 700; border-radius: 5px; padding: 0 5px; margin-right: 6px; color: #1E2340; vertical-align: 1px; }
+.rb.C { background: var(--r-c); } .rb.U { background: var(--r-u); } .rb.R { background: var(--r-r); } .rb.E { background: var(--r-e); }
+.tsub { display: block; font-size: 11px; color: var(--muted); text-decoration: none; }
+.todo-opts { display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--muted); }
+.todo-opts .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.todo-opts .row > span { width: 4.5em; flex: none; }
+.chip.small { padding: 3px 9px; font-size: 12px; }
+.todo-opts label.hard { display: flex; align-items: center; gap: 6px; color: var(--ink); }
+.todo-opts input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
+.quest { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; align-items: center; padding: 7px 2px; border-top: 1px solid var(--glass-line); }
+.quest:first-child { border-top: 0; }
+.quest.done .t { color: var(--muted); text-decoration: line-through; }
+.quest.done .check { background: var(--ok); border-color: var(--ok); }
+.quest.done .check::after { content: ""; width: 6px; height: 11px; border: solid var(--accent-ink); border-width: 0 2.5px 2.5px 0; transform: translateY(-1px) rotate(45deg); }
+.qxp { font-size: 12px; color: var(--accent); white-space: nowrap; }
+.toast.big { font-size: 16px; font-weight: 700; padding: 12px 22px; background: var(--accent); color: var(--accent-ink); }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(24px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg-top); padding: 9px 16px; border-radius: 999px; font-size: 13px; z-index: 30; max-width: calc(100% - 32px); text-align: center; }
+[hidden] { display: none !important; }
+@media (max-width: 360px) { .ai-grid { grid-template-columns: repeat(2, 1fr); } .clock .time { font-size: 54px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="clock" aria-live="off">
+    <div class="date" id="date"></div>
+    <div class="time" id="time"></div>
+  </div>
+
+  <!-- 入力 -->
+  <section class="widget" aria-label="入力">
+    <div class="w-head">
+      <div class="seg" role="group" aria-label="入れる先">
+        <button type="button" id="modeVault" aria-pressed="true">保管庫</button>
+        <button type="button" id="modeTodo" aria-pressed="false">ToDo</button>
+      </div>
+      <span class="count" id="modeHint">なんでも放り込む</span>
+    </div>
+    <div class="pending" id="pending" hidden>
+      <img id="pendingImg" alt="添付する画像">
+      <button type="button" class="linkbtn" id="pendingClear">画像を外す</button>
+    </div>
+    <div class="capture-row">
+      <button type="button" class="round attach" id="attachBtn" aria-label="画像を添付">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9" cy="11" r="2"/><path d="M21 16l-5-5-8 8"/></svg>
+      </button>
+      <textarea id="input" rows="1" placeholder="メモ・URL・画像など" autocomplete="off"></textarea>
+      <button type="button" class="round send" id="sendBtn" aria-label="保存" disabled>↑</button>
+    </div>
+    <div class="capture-extra" id="dueRow" hidden>
+      <label for="dueInput">期限</label><input type="date" id="dueInput">
+      <button type="button" class="linkbtn" id="dueToday">今日</button>
+      <button type="button" class="linkbtn" id="dueTomorrow">明日</button>
+      <button type="button" class="linkbtn" id="dueClear">なし</button>
+    </div>
+    <div class="todo-opts" id="todoOpts" hidden>
+      <div class="row"><span>難しさ</span><span id="rarChips" style="display:flex;gap:6px;flex-wrap:wrap;width:auto;flex:1;min-width:0"></span></div>
+      <div class="row"><span>伸びる力</span><span id="statChips" style="display:flex;gap:6px;flex-wrap:wrap;width:auto;flex:1;min-width:0"></span></div>
+      <label class="hard"><input type="checkbox" id="hardChk">苦手・先延ばししていたこと（経験値1.5倍）</label>
+    </div>
+    <input type="file" id="fileInput" accept="image/*" hidden>
+  </section>
+
+  <!-- プレイヤー -->
+  <section class="widget" aria-label="プレイヤー">
+    <div class="w-head"><h2>プレイヤー</h2><span class="count" id="coins"></span></div>
+    <div class="pl-top">
+      <div class="lv" id="lv"></div>
+      <div class="pl-title"><b id="ptitle"></b><span id="streak"></span></div>
+    </div>
+    <div class="bar"><i id="xpbar" style="width:0%"></i></div>
+    <div class="xpnote"><span id="xpnow"></span><span id="xpnext"></span></div>
+    <div class="stats5" id="stats5"></div>
+    <button type="button" class="linkbtn" id="toggleRecord">実績と記録を見る</button>
+    <div class="record" id="recordBox" hidden>
+      <h3 id="achHead">実績</h3>
+      <div class="ach" id="achList"></div>
+      <h3>最近の記録</h3>
+      <ul class="log" id="logList"></ul>
+    </div>
+  </section>
+
+  <!-- 今日のクエスト -->
+  <section class="widget" aria-label="今日のクエスト">
+    <div class="w-head"><h2>今日のクエスト</h2><span class="count" id="questCount"></span></div>
+    <ul class="todos" id="questList"></ul>
+    <button type="button" class="linkbtn" id="reroll"></button>
+  </section>
+
+  <!-- ToDo -->
+  <section class="widget" aria-label="ToDo">
+    <div class="w-head"><h2>TODO</h2><span class="count" id="todoCount"></span></div>
+    <ul class="todos" id="todoList"></ul>
+    <button type="button" class="linkbtn" id="toggleDone" hidden></button>
+    <ul class="todos" id="doneList" hidden></ul>
+  </section>
+
+  <!-- 保管庫 -->
+  <section class="widget" aria-label="保管庫">
+    <div class="w-head"><h2>保管庫</h2><span class="count" id="vaultCount"></span></div>
+    <div class="filters" id="filters"></div>
+    <input class="search" id="search" type="search" placeholder="保管庫を検索" autocomplete="off">
+    <ul class="items" id="items"></ul>
+  </section>
+
+  <div class="foot">
+    <button type="button" id="exportBtn">バックアップを保存</button>
+    <button type="button" id="importBtn">バックアップから戻す</button>
+    <input type="file" id="importFile" accept="application/json,.json" hidden>
+  </div>
+  <p class="note">データはこのiPhoneの中だけに保存されます。ときどきバックアップを保存してください。</p>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const pad = n => String(n).padStart(2, "0");
+  const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const WD = ["日", "月", "火", "水", "木", "金", "土"];
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+  /* ---------- clock ---------- */
+  function tick() {
+    const d = new Date();
+    $("date").textContent = `${d.getMonth() + 1}月${d.getDate()}日（${WD[d.getDay()]}）`;
+    $("time").textContent = `${d.getHours()}:${pad(d.getMinutes())}`;
+  }
+  tick(); setInterval(tick, 10000);
+
+  /* ---------- storage ---------- */
+  const KEY = "memobako-v1";
+  let state = { vault: [], todos: [], extraTags: [] };
+  try { const raw = localStorage.getItem(KEY); if (raw) state = Object.assign(state, JSON.parse(raw)); } catch {}
+  state.game = Object.assign({ log: [], ach: {}, quest: {} }, state.game || {});
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); }
+    catch { toast("保存できませんでした。容量がいっぱいかもしれません。"); }
+  }
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+
+  // images in IndexedDB
+  const idb = (() => {
+    let dbp = null;
+    const open = () => dbp || (dbp = new Promise((res, rej) => {
+      const r = indexedDB.open("memobako-images", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("img");
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    }));
+    const tx = (mode, fn) => open().then(db => new Promise((res, rej) => {
+      const t = db.transaction("img", mode); const s = t.objectStore("img");
+      const out = fn(s); t.oncomplete = () => res(out && out.result); t.onerror = () => rej(t.error);
+    }));
+    return {
+      put: (k, blob) => tx("readwrite", s => s.put(blob, k)),
+      get: k => tx("readonly", s => s.get(k)),
+      del: k => tx("readwrite", s => s.delete(k))
+    };
+  })();
+  const urlCache = {};
+  async function imgURL(id) {
+    if (urlCache[id]) return urlCache[id];
+    try { const b = await idb.get(id); if (b) return (urlCache[id] = URL.createObjectURL(b)); } catch {}
+    return null;
+  }
+
+  /* ---------- auto tags ---------- */
+  const RULES = [
+    ["FX", /(usd|eur|gbp|aud|nzd|chf|jpy|ドル円|ユーロ|ポンド|豪ドル|為替|\bfx\b|ＦＸ|pips|ロング|ショート|損切|利確|エントリー)/i],
+    ["株", /(株価|株式|銘柄|決算|配当|日経|nisa|ナスダック|s&p|tob)/i],
+    ["TCG", /(tcg|ポケカ|ワンピ|mtg|psa|新弾|パック|box開封|カード)/i],
+    ["買い物", /(欲しい|ほしい|買いたい|買う|購入|amazon|楽天|セール|ポチ)/i],
+    ["アイデア", /(アイデア|アイディア|思いつ|作りたい|アプリ|企画|ネタ)/i],
+    ["検証", /(検証|試したい|試す|バックテスト|仮説)/],
+    ["読む", /(記事|読みたい|読む|ブログ|note\.com|ニュース)/i],
+    ["疑問", /([?？]\s*$|調べ|とは[?？]?\s*$|なぜ|どうやって|わからない|知りたい)/]
+  ];
+  const BASE_TAGS = RULES.map(r => r[0]);
+  function autoTags(text, kind) {
+    const tags = RULES.filter(([, re]) => re.test(text)).map(([t]) => t);
+    if (kind === "link" && !tags.includes("読む") && !tags.includes("買い物")) tags.push("読む");
+    return tags;
+  }
+  const allTags = () => [...BASE_TAGS, ...state.extraTags.filter(t => !BASE_TAGS.includes(t))];
+
+  const URL_RE = /https?:\/\/[^\s<>"'）)]+/i;
+  const domainOf = u => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } };
+
+  /* ---------- capture ---------- */
+  let mode = "vault";
+  let pendingBlob = null;
+  const input = $("input");
+  function setMode(m) {
+    mode = m;
+    $("modeVault").setAttribute("aria-pressed", String(m === "vault"));
+    $("modeTodo").setAttribute("aria-pressed", String(m === "todo"));
+    $("dueRow").hidden = m !== "todo";
+    $("todoOpts").hidden = m !== "todo";
+    $("attachBtn").hidden = m !== "vault";
+    if (m === "todo") clearPending();
+    $("modeHint").textContent = m === "vault" ? "なんでも放り込む" : "やることを追加";
+    input.placeholder = m === "vault" ? "メモ・URL・画像など" : "やること";
+    syncSend();
+  }
+  function autosize() { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, window.innerHeight * 0.4) + "px"; }
+  function syncSend() { $("sendBtn").disabled = !input.value.trim() && !pendingBlob; }
+  input.addEventListener("input", () => { autosize(); syncSend(); });
+  input.addEventListener("keydown", e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submit(); } });
+  $("modeVault").addEventListener("click", () => setMode("vault"));
+  $("modeTodo").addEventListener("click", () => setMode("todo"));
+  $("dueToday").addEventListener("click", () => { $("dueInput").value = ymd(new Date()); });
+  $("dueTomorrow").addEventListener("click", () => { const d = new Date(); d.setDate(d.getDate() + 1); $("dueInput").value = ymd(d); });
+  $("dueClear").addEventListener("click", () => { $("dueInput").value = ""; });
+
+  async function shrink(file) {
+    try {
+      const bmp = await createImageBitmap(file);
+      const max = 1600, k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+      const c = document.createElement("canvas"); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+      c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+      return await new Promise(r => c.toBlob(b => r(b || file), "image/jpeg", 0.82));
+    } catch { return file; }
+  }
+  async function setPending(file) {
+    pendingBlob = await shrink(file);
+    $("pendingImg").src = URL.createObjectURL(pendingBlob);
+    $("pending").hidden = false; setMode("vault"); syncSend();
+  }
+  function clearPending() { pendingBlob = null; $("pending").hidden = true; syncSend(); }
+  $("attachBtn").addEventListener("click", () => $("fileInput").click());
+  $("fileInput").addEventListener("change", e => { const f = e.target.files && e.target.files[0]; if (f) setPending(f); e.target.value = ""; });
+  $("pendingClear").addEventListener("click", clearPending);
+  input.addEventListener("paste", e => {
+    const f = [...(e.clipboardData ? e.clipboardData.files : [])].find(x => x.type.startsWith("image/"));
+    if (f) { e.preventDefault(); setPending(f); }
+  });
+  $("sendBtn").addEventListener("click", submit);
+
+  async function submit() {
+    const text = input.value.trim();
+    if (!text && !pendingBlob) return;
+    if (mode === "todo") {
+      state.todos.push({ id: uid(), text, due: $("dueInput").value || "", done: false, createdAt: Date.now(), rar: tf.rar, stat: tf.stat, hard: $("hardChk").checked });
+      $("dueInput").value = ""; $("hardChk").checked = false; tf = { rar: "C", stat: "act" }; drawTodoOpts(); save(); toast("ToDoに追加しました");
+    } else {
+      const id = uid();
+      const url = (text.match(URL_RE) || [""])[0];
+      const kind = pendingBlob ? "image" : url ? "link" : "memo";
+      const item = { id, kind, text, url, tags: autoTags(text, kind), pinned: false, done: false, createdAt: Date.now() };
+      if (pendingBlob) { try { await idb.put(id, pendingBlob); } catch { toast("画像を保存できませんでした"); return; } }
+      state.vault.unshift(item); save();
+      toast(item.tags.length ? `保存しました（${item.tags.join("・")}）` : "保存しました");
+      clearPending();
+    }
+    input.value = ""; autosize(); syncSend(); render();
+  }
+
+  /* ---------- game ---------- */
+  // 経験値のルール：難しさで基本XPが決まり、苦手なことは1.5倍、2日以上連続で達成していると連続ボーナス（最大+14XP）。
+  // 達成記録は ref（どのタスク・クエストか）ごとに1件だけ。チェックを外すと記録も取り消すので二重取りは起きない。
+  const RAR = { C: { name: "かんたん", xp: 10, coin: 2 }, U: { name: "ふつう", xp: 25, coin: 5 }, R: { name: "むずかしい", xp: 75, coin: 15 }, E: { name: "大仕事", xp: 200, coin: 40 } };
+  const STATS = [["int", "知力"], ["act", "行動力"], ["cre", "創造力"], ["con", "継続力"], ["fin", "財務力"]];
+  const statName = k => (STATS.find(s => s[0] === k) || STATS[1])[1];
+  const guessStat = tags => tags.some(t => ["FX", "株", "TCG", "買い物"].includes(t)) ? "fin" : tags.includes("アイデア") ? "cre" : tags.some(t => ["疑問", "読む", "検証"].includes(t)) ? "int" : "act";
+  const taskXP = t => Math.round((RAR[t.rar] || RAR.C).xp * (t.hard ? 1.5 : 1));
+  const taskCoin = t => Math.round((RAR[t.rar] || RAR.C).coin * (t.hard ? 1.5 : 1));
+  const LV = { base: 100, step: 50 }, SLV = { base: 50, step: 25 };
+  let tf = { rar: "C", stat: "act" };
+
+  function drawTodoOpts() {
+    const rc = $("rarChips"); rc.innerHTML = "";
+    for (const k of Object.keys(RAR)) {
+      const b = document.createElement("button"); b.type = "button"; b.className = "chip small";
+      b.textContent = `${RAR[k].name} ${RAR[k].xp}`; b.setAttribute("aria-pressed", String(tf.rar === k));
+      b.addEventListener("click", () => { tf.rar = k; drawTodoOpts(); }); rc.appendChild(b);
+    }
+    const sc = $("statChips"); sc.innerHTML = "";
+    for (const [k, l] of STATS) {
+      const b = document.createElement("button"); b.type = "button"; b.className = "chip small"; b.textContent = l;
+      b.setAttribute("aria-pressed", String(tf.stat === k));
+      b.addEventListener("click", () => { tf.stat = k; drawTodoOpts(); }); sc.appendChild(b);
+    }
+  }
+
+  const dayOf = ts => ymd(new Date(ts));
+  const activeDays = () => new Set(state.game.log.map(l => dayOf(l.at)));
+  function runFrom(days, d) { let n = 0; while (days.has(ymd(d))) { n++; d.setDate(d.getDate() - 1); } return n; }
+  function streakNow() { const days = activeDays(); const d = new Date(); if (!days.has(ymd(d))) d.setDate(d.getDate() - 1); return runFrom(days, d); }
+  function streakBonus() { const days = activeDays(); days.add(ymd(new Date())); const n = runFrom(days, new Date()); return n >= 2 ? Math.min(n, 7) * 2 : 0; }
+  function levelFrom(xp, cfg) { let L = 1, need = cfg.base; while (xp >= need) { xp -= need; L++; need = cfg.base + (L - 1) * cfg.step; } return { L, cur: xp, need }; }
+  function totals() {
+    const g = { xp: 0, coin: 0, stat: {} }; STATS.forEach(s => { g.stat[s[0]] = 0; });
+    for (const l of state.game.log) { g.xp += l.xp; g.coin += l.coin || 0; g.stat[l.stat] = (g.stat[l.stat] || 0) + l.xp; }
+    return g;
+  }
+  function award(ref, e) {
+    if (state.game.log.some(l => l.ref === ref)) return;
+    const before = levelFrom(totals().xp, LV).L;
+    const bonus = streakBonus();
+    state.game.log.push({ id: uid(), ref, at: Date.now(), kind: e.kind, text: e.text, stat: e.stat, rar: e.rar || "", hard: !!e.hard, coin: e.coin, xp: e.xp + bonus, bonus });
+    const after = levelFrom(totals().xp, LV).L;
+    toast(`+${e.xp + bonus}XP ${statName(e.stat)}${bonus ? `（連続ボーナス+${bonus}）` : ""}`);
+    if (after > before) toast(`レベルアップ！ Lv.${after}`, true);
+    checkAch();
+  }
+  const revoke = ref => { state.game.log = state.game.log.filter(l => l.ref !== ref); };
+  function toggleTask(t) {
+    t.done = !t.done; t.doneAt = t.done ? Date.now() : 0;
+    if (t.done) award("t:" + t.id, { kind: "task", text: t.text, xp: taskXP(t), coin: taskCoin(t), stat: t.stat || "act", rar: t.rar || "C", hard: t.hard });
+    else revoke("t:" + t.id);
+    save(); render();
+  }
+
+  const TITLE = { int: "賢者", act: "切り込み隊長", cre: "発明家", con: "修練者", fin: "商人" };
+  function playerTitle(g, L) {
+    if (!g.xp) return "見習い冒険者";
+    const top = STATS.map(s => s[0]).sort((a, b) => g.stat[b] - g.stat[a])[0];
+    return (L < 5 ? "見習い" : L < 10 ? "" : L < 20 ? "熟練の" : "伝説の") + TITLE[top];
+  }
+
+  const ACH = [
+    ["first", "初めての一歩", "何かを1つ達成", s => s.n >= 1],
+    ["n10", "駆け出し冒険者", "合計10回達成", s => s.n >= 10],
+    ["n50", "百戦錬磨", "合計50回達成", s => s.n >= 50],
+    ["st3", "三日坊主卒業", "3日連続で達成", s => s.streak >= 3],
+    ["st7", "継続の達人", "7日連続で達成", s => s.streak >= 7],
+    ["rare5", "困難への挑戦者", "むずかしい以上を5回", s => s.rare >= 5],
+    ["epic1", "偉業", "大仕事を1回達成", s => s.epic >= 1],
+    ["hard5", "先延ばしキラー", "苦手なことを5回達成", s => s.hard >= 5],
+    ["q10", "クエストハンター", "今日のクエストを10回", s => s.q >= 10],
+    ["int10", "知識の探求者", "知力の行動を10回", s => s.by.int >= 10],
+    ["cre10", "創造者", "創造力の行動を10回", s => s.by.cre >= 10],
+    ["fin10", "財務の番人", "財務力の行動を10回", s => s.by.fin >= 10],
+    ["all2", "オールラウンダー", "全ステータスLv.2以上", s => s.all2],
+    ["lv5", "一人前", "Lv.5に到達", s => s.L >= 5],
+    ["lv10", "ベテラン", "Lv.10に到達", s => s.L >= 10]
+  ];
+  function achStats() {
+    const g = totals(), log = state.game.log, by = {};
+    STATS.forEach(x => { by[x[0]] = 0; }); log.forEach(l => { by[l.stat] = (by[l.stat] || 0) + 1; });
+    return {
+      n: log.length, streak: streakNow(), by,
+      rare: log.filter(l => l.rar === "R" || l.rar === "E").length, epic: log.filter(l => l.rar === "E").length,
+      hard: log.filter(l => l.hard).length, q: log.filter(l => l.kind === "quest").length,
+      all2: STATS.every(x => levelFrom(g.stat[x[0]] || 0, SLV).L >= 2), L: levelFrom(g.xp, LV).L
+    };
+  }
+  function checkAch() {
+    const s = achStats();
+    for (const [id, name, , fn] of ACH) if (!state.game.ach[id] && fn(s)) { state.game.ach[id] = Date.now(); toast(`実績解除：${name}`, true); }
+  }
+
+  const QUESTS = [
+    ["q01", "気になっていた記事を1本読む", "int", 20], ["q02", "保管庫の「疑問」を1つ解決する", "int", 25],
+    ["q03", "本を15分読む", "int", 20], ["q04", "知らない用語を1つ調べる", "int", 15],
+    ["q05", "5分だけ部屋を片付ける", "act", 15], ["q06", "先延ばししていた連絡を1件返す", "act", 30],
+    ["q07", "机の上を片付ける", "act", 15], ["q08", "使っていない物を1つ処分か出品する", "act", 25],
+    ["q09", "保管庫のメモを1つ「済」にする", "act", 15], ["q10", "新しいアイデアを1つ保管庫に入れる", "cre", 15],
+    ["q11", "開発中のアプリを10分さわる", "cre", 25], ["q12", "アイデアを1つClaudeで発展させる", "cre", 20],
+    ["q13", "気になるアプリの仕組みを1つ調べる", "cre", 20], ["q14", "10分散歩する", "con", 15],
+    ["q15", "ストレッチを5分する", "con", 15], ["q16", "いつもより30分早く寝る準備をする", "con", 20],
+    ["q17", "水をコップ1杯多く飲む", "con", 10], ["q18", "今週の支出をざっと確認する", "fin", 20],
+    ["q19", "TCG在庫の相場を1枚チェックする", "fin", 15], ["q20", "FXの検証メモを1つ書く", "fin", 20],
+    ["q21", "サブスクを1つ見直す", "fin", 25], ["q22", "TCG収支帳に記録を1件つける", "fin", 15],
+    ["q23", "明日のToDoを3つ書き出す", "act", 15], ["q24", "今日うまくいったことを1つメモする", "con", 10]
+  ];
+  function hashStr(str) { let h = 2166136261; for (const ch of str) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+  function pickN(seed, n, exclude) {
+    let x = hashStr(seed) || 1;
+    const rnd = () => { x ^= x << 13; x >>>= 0; x ^= x >>> 17; x ^= x << 5; x >>>= 0; return x / 4294967296; };
+    const pool = QUESTS.map(q => q[0]).filter(id => !(exclude || []).includes(id)); const out = [];
+    while (out.length < n && pool.length) out.push(pool.splice(Math.floor(rnd() * pool.length), 1)[0]);
+    return out;
+  }
+  function todayQuests() {
+    const d = ymd(new Date());
+    if (state.game.quest.date !== d) { state.game.quest = { date: d, ids: pickN(d, 3), rerolled: false }; save(); }
+    return state.game.quest;
+  }
+  const questRef = (q, id) => `q:${q.date}:${id}`;
+  function renderQuests() {
+    const q = todayQuests(); const ul = $("questList"); ul.innerHTML = ""; let done = 0;
+    for (const id of q.ids) {
+      const Q = QUESTS.find(x => x[0] === id); if (!Q) continue;
+      const ref = questRef(q, id); const isDone = state.game.log.some(l => l.ref === ref); if (isDone) done++;
+      const li = document.createElement("li"); li.className = "quest" + (isDone ? " done" : "");
+      const c = document.createElement("button"); c.type = "button"; c.className = "check"; c.setAttribute("aria-label", isDone ? "未達成に戻す" : "達成にする");
+      c.addEventListener("click", () => {
+        if (isDone) revoke(ref); else award(ref, { kind: "quest", text: Q[1], xp: Q[3], coin: 5, stat: Q[2] });
+        save(); render();
+      });
+      const t = document.createElement("div"); t.className = "t"; t.textContent = Q[1];
+      const sub = document.createElement("span"); sub.className = "tsub"; sub.textContent = statName(Q[2]); t.appendChild(sub);
+      const xp = document.createElement("span"); xp.className = "qxp"; xp.textContent = `+${Q[3]}XP`;
+      li.append(c, t, xp); ul.appendChild(li);
+    }
+    $("questCount").textContent = `${done}/${q.ids.length}`;
+    const rr = $("reroll"); rr.textContent = q.rerolled ? "入れ替えは明日また使えます" : "まだのクエストを入れ替える（1日1回）"; rr.disabled = !!q.rerolled;
+  }
+  $("reroll").addEventListener("click", () => {
+    const q = todayQuests(); if (q.rerolled) return;
+    const kept = q.ids.filter(id => state.game.log.some(l => l.ref === questRef(q, id)));
+    q.ids = [...kept, ...pickN(q.date + "r", 3 - kept.length, q.ids)];
+    q.rerolled = true; save(); render(); toast("クエストを入れ替えました");
+  });
+
+  let recordOpen = false;
+  $("toggleRecord").addEventListener("click", () => { recordOpen = !recordOpen; renderGame(); });
+  function renderGame() {
+    const g = totals(), lv = levelFrom(g.xp, LV);
+    $("lv").innerHTML = `<small>Lv.</small>${lv.L}`;
+    $("ptitle").textContent = playerTitle(g, lv.L);
+    const st = streakNow();
+    $("streak").textContent = st ? `${st}日連続で達成中` : "今日も何か1つ達成してみよう";
+    $("xpbar").style.width = (lv.cur / lv.need * 100).toFixed(1) + "%";
+    $("xpnow").textContent = `累計 ${g.xp.toLocaleString("ja-JP")} XP`;
+    $("xpnext").textContent = `次のレベルまで ${lv.need - lv.cur} XP`;
+    $("coins").textContent = `${g.coin.toLocaleString("ja-JP")} コイン`;
+    const box = $("stats5"); box.innerHTML = "";
+    for (const [k, l] of STATS) {
+      const s = levelFrom(g.stat[k] || 0, SLV);
+      const a = document.createElement("span"); a.textContent = l;
+      const bar = document.createElement("div"); bar.className = "bar"; const i = document.createElement("i"); i.style.width = (s.cur / s.need * 100).toFixed(1) + "%"; bar.appendChild(i);
+      const v = document.createElement("span"); v.className = "slv"; v.textContent = `Lv.${s.L}`;
+      box.append(a, bar, v);
+    }
+    $("recordBox").hidden = !recordOpen;
+    $("toggleRecord").textContent = recordOpen ? "実績と記録を閉じる" : "実績と記録を見る";
+    if (!recordOpen) return;
+    const got = ACH.filter(a => state.game.ach[a[0]]).length;
+    $("achHead").textContent = `実績 ${got}/${ACH.length}`;
+    const al = $("achList"); al.innerHTML = "";
+    for (const [id, name, desc] of ACH) {
+      const d = document.createElement("div"); d.className = state.game.ach[id] ? "got" : "lock";
+      const b = document.createElement("b"); b.textContent = state.game.ach[id] ? name : "？？？";
+      d.append(b, document.createTextNode(desc)); al.appendChild(d);
+    }
+    const ll = $("logList"); ll.innerHTML = "";
+    const recent = [...state.game.log].sort((a, b) => b.at - a.at).slice(0, 20);
+    if (!recent.length) { const li = document.createElement("li"); li.textContent = "まだ記録はありません"; ll.appendChild(li); }
+    for (const l of recent) {
+      const li = document.createElement("li");
+      const a = document.createElement("span"); const d = new Date(l.at); a.textContent = `${d.getMonth() + 1}/${d.getDate()} ${l.text}`;
+      const b = document.createElement("span"); b.textContent = `+${l.xp}XP`;
+      li.append(a, b); ll.appendChild(li);
+    }
+  }
+
+  /* ---------- ToDo ---------- */
+  let showDone = false;
+  function dueLabel(due) {
+    if (!due) return ["", ""];
+    const t = ymd(new Date());
+    const d = new Date(due + "T00:00:00");
+    const diff = Math.round((d - new Date(t + "T00:00:00")) / 86400000);
+    if (diff < 0) return [`${-diff}日超過`, "over"];
+    if (diff === 0) return ["今日", "today"];
+    if (diff === 1) return ["明日", ""];
+    return [`${d.getMonth() + 1}/${d.getDate()}（${WD[d.getDay()]}）`, ""];
+  }
+  function todoEl(t) {
+    const li = document.createElement("li"); li.className = "todo" + (t.done ? " done" : "");
+    const c = document.createElement("button"); c.type = "button"; c.className = "check"; c.setAttribute("aria-label", t.done ? "未完了に戻す" : "完了にする");
+    c.addEventListener("click", () => toggleTask(t));
+    const tx = document.createElement("div"); tx.className = "t";
+    const r = RAR[t.rar] ? t.rar : "C";
+    const rb = document.createElement("span"); rb.className = "rb " + r; rb.textContent = r;
+    tx.append(rb, document.createTextNode(t.text));
+    const sub = document.createElement("span"); sub.className = "tsub";
+    sub.textContent = `${statName(t.stat)}${t.hard ? "・苦手" : ""}・${taskXP(t)}XP`;
+    tx.appendChild(sub);
+    const right = document.createElement("div"); right.style.display = "flex"; right.style.alignItems = "center"; right.style.gap = "2px";
+    if (!t.done && t.due) { const [l, cls] = dueLabel(t.due); const s = document.createElement("span"); s.className = "due " + cls; s.textContent = l; right.appendChild(s); }
+    const x = document.createElement("button"); x.type = "button"; x.className = "x"; x.textContent = "×"; x.setAttribute("aria-label", "削除");
+    x.addEventListener("click", () => { state.todos = state.todos.filter(y => y.id !== t.id); save(); render(); toast("削除しました"); });
+    right.appendChild(x);
+    li.append(c, tx, right);
+    return li;
+  }
+  function renderTodos() {
+    const open = state.todos.filter(t => !t.done).sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999") || a.createdAt - b.createdAt);
+    const done = state.todos.filter(t => t.done).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
+    const ul = $("todoList"); ul.innerHTML = "";
+    if (!open.length) { const e = document.createElement("li"); e.className = "empty"; e.innerHTML = "<strong>やることはありません</strong>上の入力欄を「ToDo」にして追加できます"; ul.appendChild(e); }
+    open.forEach(t => ul.appendChild(todoEl(t)));
+    $("todoCount").textContent = open.length ? `残り${open.length}件` : "";
+    const tg = $("toggleDone"); tg.hidden = !done.length;
+    tg.textContent = showDone ? "完了済みを隠す" : `完了済み ${done.length}件を表示`;
+    const dl = $("doneList"); dl.innerHTML = ""; dl.hidden = !showDone || !done.length;
+    if (showDone) done.slice(0, 50).forEach(t => dl.appendChild(todoEl(t)));
+  }
+  $("toggleDone").addEventListener("click", () => { showDone = !showDone; renderTodos(); });
+
+  /* ---------- AI hand-off ---------- */
+  const AI = [
+    ["要約", it => it.url ? `次のURLのページを読んで、内容を要約してください。最初に一言でまとめ、そのあと重要なポイントを3〜5個の箇条書きで。\n\n${it.url}${it.text !== it.url ? "\n\n補足メモ：" + it.text : ""}` : `次のメモの内容を要約し、重要なポイントを箇条書きにしてください。\n\n${it.text}`],
+    ["発展させる", it => `次のメモを出発点に、アイデアを広げてください。発展させた案を5つ、それぞれ「何をするか」「良い点」「最初の一歩」を短く書いてください。\n\n${it.text}`],
+    ["タスク化", it => `次の内容を、今日から着手できる具体的なタスクに分解してください。各タスクは1行で動詞から始め、所要時間の目安も付けてください。\n\n${it.text}`],
+    ["検証方法", it => `次の考えを検証する方法を提案してください。検証したい仮説、必要なデータ、手順、判断の基準、注意すべき落とし穴の順に整理してください。投資判断の助言ではなく、検証方法の設計として答えてください。\n\n${it.text}`],
+    ["調べる", it => `次の疑問について調べて、わかりやすく説明してください。最新の情報が必要な場合はWeb検索を使い、出典を示してください。\n\n${it.text}`],
+    ["コード相談", it => `個人用のアプリ開発の相談です。次のメモの内容を実装するにはどうすればよいか、方針と具体的な手順を教えてください。\n\n${it.text}`]
+  ];
+  function askClaude(prompt) {
+    let copied = false;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(prompt).then(() => { copied = true; }).catch(() => {});
+      }
+    } catch {}
+    const q = prompt.length <= 1500 ? "?q=" + encodeURIComponent(prompt) : "";
+    window.open("https://claude.ai/new" + q, "_blank");
+    setTimeout(() => toast(copied ? "依頼文をコピーしました。入っていなければ貼り付けてください" : "Claudeを開きました"), 300);
+  }
+
+  /* ---------- 保管庫 ---------- */
+  let filter = "all";
+  let openId = null;
+  let editId = null;
+  let delArmed = null;
+  function renderFilters() {
+    const box = $("filters"); box.innerHTML = "";
+    const used = new Set(state.vault.filter(v => !v.done).flatMap(v => v.tags));
+    const opts = [["all", "すべて"], ["pin", "ピン"], ...allTags().filter(t => used.has(t)).map(t => [t, t]), ["none", "未分類"], ["done", "済"]];
+    for (const [k, l] of opts) {
+      const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = l;
+      b.setAttribute("aria-pressed", String(filter === k));
+      b.addEventListener("click", () => { filter = k; renderVault(); });
+      box.appendChild(b);
+    }
+  }
+  function visible() {
+    const q = $("search").value.trim().toLowerCase();
+    return state.vault.filter(v => {
+      if (filter === "done") { if (!v.done) return false; }
+      else if (v.done) return false;
+      if (filter === "pin" && !v.pinned) return false;
+      if (filter === "none" && v.tags.length) return false;
+      if (!["all", "pin", "none", "done"].includes(filter) && !v.tags.includes(filter)) return false;
+      if (q && !(`${v.text} ${v.tags.join(" ")}`.toLowerCase().includes(q))) return false;
+      return true;
+    }).sort((a, b) => (b.pinned - a.pinned) || (b.createdAt - a.createdAt));
+  }
+  function ago(ts) {
+    const m = Math.floor((Date.now() - ts) / 60000);
+    if (m < 1) return "たった今"; if (m < 60) return `${m}分前`;
+    const h = Math.floor(m / 60); if (h < 24) return `${h}時間前`;
+    const d = new Date(ts); return `${d.getMonth() + 1}/${d.getDate()}`;
+  }
+  function linkify(el, text) {
+    const parts = text.split(/(https?:\/\/[^\s<>"'）)]+)/i);
+    for (const p of parts) {
+      if (/^https?:\/\//i.test(p)) { const a = document.createElement("a"); a.href = p; a.target = "_blank"; a.rel = "noopener"; a.textContent = p.length > 60 ? p.slice(0, 57) + "…" : p; a.addEventListener("click", e => e.stopPropagation()); el.appendChild(a); }
+      else if (p) el.appendChild(document.createTextNode(p));
+    }
+  }
+  function btn(label, fn, cls) { const b = document.createElement("button"); b.type = "button"; b.textContent = label; if (cls) b.className = cls; b.addEventListener("click", e => { e.stopPropagation(); fn(); }); return b; }
+
+  function itemEl(v) {
+    const li = document.createElement("li");
+    li.className = "item" + (openId === v.id ? " open" : "") + (v.done ? " done" : "");
+    li.addEventListener("click", () => { openId = openId === v.id ? null : v.id; editId = null; delArmed = null; renderVault(); });
+
+    const top = document.createElement("div"); top.className = "top";
+    const k = document.createElement("span"); k.className = "kind"; k.textContent = { memo: "メモ", link: "リンク", image: "画像" }[v.kind] || "メモ";
+    const body = document.createElement("div"); body.className = "body";
+    if (editId === v.id) {
+      const ta = document.createElement("textarea"); ta.className = "edit-area"; ta.value = v.text; ta.id = "edit-" + v.id;
+      ta.addEventListener("click", e => e.stopPropagation());
+      body.appendChild(ta);
+      setTimeout(() => ta.focus(), 30);
+    } else if (v.text) {
+      linkify(body, v.text);
+      if (v.url) { const d = document.createElement("div"); d.className = "domain"; d.textContent = domainOf(v.url); body.appendChild(d); }
+    }
+    top.append(k, body);
+    li.appendChild(top);
+
+    if (v.kind === "image") {
+      const img = document.createElement("img"); img.className = "photo"; img.alt = v.text || "保存した画像";
+      imgURL(v.id).then(u => { if (u) img.src = u; else img.replaceWith(Object.assign(document.createElement("div"), { className: "domain", textContent: "画像が見つかりません" })); });
+      li.appendChild(img);
+    }
+
+    const meta = document.createElement("div"); meta.className = "meta";
+    if (v.pinned) { const p = document.createElement("span"); p.className = "pin"; p.textContent = "★"; meta.appendChild(p); }
+    v.tags.forEach(t => { const s = document.createElement("span"); s.className = "tag"; s.textContent = t; meta.appendChild(s); });
+    const time = document.createElement("span"); time.textContent = ago(v.createdAt); meta.appendChild(time);
+    li.appendChild(meta);
+
+    if (openId === v.id) li.appendChild(panelEl(v));
+    return li;
+  }
+
+  function panelEl(v) {
+    const p = document.createElement("div"); p.className = "panel";
+    p.addEventListener("click", e => e.stopPropagation());
+
+    if (editId === v.id) {
+      const a = document.createElement("div"); a.className = "actions";
+      a.append(
+        btn("保存", () => {
+          const ta = $("edit-" + v.id); const t = ta ? ta.value.trim() : v.text;
+          v.text = t; v.url = (t.match(URL_RE) || [""])[0];
+          if (v.kind !== "image") v.kind = v.url ? "link" : "memo";
+          editId = null; save(); render(); toast("更新しました");
+        }),
+        btn("やめる", () => { editId = null; renderVault(); })
+      );
+      p.appendChild(a); return p;
+    }
+
+    const h1 = document.createElement("h3"); h1.textContent = "Claudeに頼む";
+    const g = document.createElement("div"); g.className = "ai-grid";
+    const order = v.tags.includes("FX") || v.tags.includes("株") ? [3, 4, 0, 1, 2, 5] : v.kind === "link" ? [0, 4, 1, 2, 3, 5] : [1, 2, 4, 0, 3, 5];
+    order.forEach(i => { const [label, make] = AI[i]; g.appendChild(btn(label, () => askClaude(make(v)))); });
+    p.append(h1, g);
+
+    const h2 = document.createElement("h3"); h2.textContent = "タグ";
+    const te = document.createElement("div"); te.className = "tagedit";
+    allTags().forEach(t => {
+      const b = btn(t, () => { v.tags = v.tags.includes(t) ? v.tags.filter(x => x !== t) : [...v.tags, t]; save(); render(); }, "chip");
+      b.setAttribute("aria-pressed", String(v.tags.includes(t)));
+      te.appendChild(b);
+    });
+    const ni = document.createElement("input"); ni.placeholder = "＋新しいタグ"; ni.maxLength = 12; ni.id = "newtag-" + v.id;
+    ni.addEventListener("keydown", e => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      const t = ni.value.trim(); if (!t) return;
+      if (!allTags().includes(t)) state.extraTags.push(t);
+      if (!v.tags.includes(t)) v.tags.push(t);
+      save(); render();
+    });
+    te.appendChild(ni);
+    p.append(h2, te);
+
+    const a = document.createElement("div"); a.className = "actions";
+    a.append(
+      btn(v.pinned ? "ピンを外す" : "ピン留め", () => { v.pinned = !v.pinned; save(); render(); }),
+      btn("ToDoにする", () => { state.todos.push({ id: uid(), text: v.text || "保管庫の画像を確認", due: "", done: false, createdAt: Date.now(), rar: "C", stat: guessStat(v.tags), hard: false }); save(); render(); toast("ToDoに追加しました"); }),
+      btn("編集", () => { editId = v.id; renderVault(); }),
+      btn("コピー", () => { navigator.clipboard.writeText(v.text).then(() => toast("コピーしました"), () => toast("コピーできませんでした")); }),
+      btn(v.done ? "未処理に戻す" : "済にする", () => { v.done = !v.done; openId = null; save(); render(); toast(v.done ? "済にしました" : "戻しました"); }),
+      btn(delArmed === v.id ? "本当に削除" : "削除", async () => {
+        if (delArmed !== v.id) { delArmed = v.id; renderVault(); return; }
+        state.vault = state.vault.filter(x => x.id !== v.id);
+        if (v.kind === "image") { try { await idb.del(v.id); } catch {} }
+        openId = null; delArmed = null; save(); render(); toast("削除しました");
+      }, "del")
+    );
+    p.appendChild(a);
+    return p;
+  }
+
+  function renderVault() {
+    renderFilters();
+    const list = visible();
+    const ul = $("items"); ul.innerHTML = "";
+    const active = state.vault.filter(v => !v.done).length;
+    $("vaultCount").textContent = active ? `${active}件` : "";
+    if (!list.length) {
+      const e = document.createElement("li"); e.className = "empty";
+      e.innerHTML = state.vault.length ? "<strong>該当するものはありません</strong>絞り込みや検索語を変えてみてください" : "<strong>まだ何も入っていません</strong>上の入力欄に、思いついたことやURLを入れてみましょう";
+      ul.appendChild(e); return;
+    }
+    list.slice(0, 200).forEach(v => ul.appendChild(itemEl(v)));
+  }
+  $("search").addEventListener("input", renderVault);
+
+  function render() { renderGame(); renderQuests(); renderTodos(); renderVault(); }
+
+  /* ---------- backup ---------- */
+  const blobToDataURL = b => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.onerror = () => r(null); fr.readAsDataURL(b); });
+  $("exportBtn").addEventListener("click", async () => {
+    const images = {};
+    for (const v of state.vault.filter(x => x.kind === "image")) { try { const b = await idb.get(v.id); if (b) images[v.id] = await blobToDataURL(b); } catch {} }
+    const data = JSON.stringify({ app: "memobako", version: 1, exportedAt: new Date().toISOString(), state, images });
+    const blob = new Blob([data], { type: "application/json" });
+    const name = `memobako_${ymd(new Date())}.json`;
+    try {
+      const file = new File([blob], name, { type: "application/json" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return; }
+    } catch (e) { if (e && e.name === "AbortError") return; }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    toast("バックアップを保存しました");
+  });
+  $("importBtn").addEventListener("click", () => $("importFile").click());
+  $("importFile").addEventListener("change", async e => {
+    const f = e.target.files && e.target.files[0]; e.target.value = "";
+    if (!f) return;
+    try {
+      const data = JSON.parse(await f.text());
+      if (data.app !== "memobako" || !data.state) throw new Error("format");
+      const have = new Set(state.vault.map(v => v.id)), haveT = new Set(state.todos.map(t => t.id));
+      let added = 0;
+      for (const v of data.state.vault || []) if (!have.has(v.id)) { state.vault.push(v); added++; }
+      for (const t of data.state.todos || []) if (!haveT.has(t.id)) { state.todos.push(t); added++; }
+      for (const t of data.state.extraTags || []) if (!state.extraTags.includes(t)) state.extraTags.push(t);
+      if (data.state.game) {
+        const haveL = new Set(state.game.log.map(l => l.ref));
+        for (const l of data.state.game.log || []) if (!haveL.has(l.ref)) state.game.log.push(l);
+        Object.assign(state.game.ach, data.state.game.ach || {});
+      }
+      for (const [id, du] of Object.entries(data.images || {})) { try { const b = await (await fetch(du)).blob(); await idb.put(id, b); } catch {} }
+      state.vault.sort((a, b) => b.createdAt - a.createdAt);
+      save(); render(); toast(`${added}件を戻しました`);
+    } catch { toast("このファイルは読み込めませんでした。メモ箱のバックアップか確認してください。"); }
+  });
+
+  /* ---------- misc ---------- */
+  const toastQ = []; let toastBusy = false;
+  function toast(msg, big) { toastQ.push([msg, big]); if (!toastBusy) nextToast(); }
+  function nextToast() {
+    const t = $("toast"); const n = toastQ.shift();
+    if (!n) { toastBusy = false; t.hidden = true; return; }
+    toastBusy = true; t.textContent = n[0]; t.className = "toast" + (n[1] ? " big" : ""); t.hidden = false;
+    setTimeout(nextToast, n[1] ? 2600 : 1900);
+  }
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+
+  drawTodoOpts();
+  setMode("vault");
+  render();
+})();
+</script>
+</body>
+</html>
