@@ -212,6 +212,27 @@ img.spr { image-rendering: pixelated; image-rendering: crisp-edges; display: blo
 .tagman .n { font-size: 11px; color: var(--muted); white-space: nowrap; }
 .tagman button { border: 1px solid rgba(255,138,122,.5); background: transparent; color: var(--danger); border-radius: 10px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
 .toast.drop { background: #2A1A0E; color: #FFB27A; border: 1px solid #FF9E5E; font-family: var(--font-px); font-size: 15px; padding: 12px 18px; }
+/* diary */
+.dnav { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.dnav b { font-size: 15px; }
+.chips-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.mood { border: 1px solid var(--glass-line); background: transparent; color: var(--ink); border-radius: 999px; padding: 4px 11px; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.mood i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.mood[aria-pressed="true"] { background: var(--glass-strong); border-color: var(--ink); font-weight: 700; }
+.dtext { width: 100%; resize: vertical; border: 1px solid var(--glass-line); background: rgba(0,0,0,.22); color: var(--ink); border-radius: 14px; padding: 11px 12px; font: inherit; font-size: 16px; line-height: 1.6; min-height: 8em; }
+.dtext::placeholder { color: var(--muted); }
+.dauto { font-size: 12px; color: var(--muted); display: flex; flex-direction: column; gap: 2px; }
+.dauto b { color: var(--ink); font-weight: 500; }
+.dsave { background: var(--accent) !important; color: var(--accent-ink) !important; border: 0 !important; font-weight: 700; }
+.dsave:disabled { opacity: .5; }
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-size: 11px; }
+.cal .wd { color: var(--muted); padding: 2px 0; }
+.cal .mh { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 2px 0 4px; }
+.cal button.day { aspect-ratio: 1; max-width: 100%; border: 1px solid transparent; border-radius: 9px; background: rgba(0,0,0,.18); color: var(--ink); font-size: 12px; cursor: pointer; padding: 0; font-variant-numeric: tabular-nums; }
+.cal button.day.has { color: #1E2340; font-weight: 700; }
+.cal button.day.sel { border-color: var(--accent); }
+.cal button.day.today { text-decoration: underline; text-underline-offset: 2px; }
+.cal button.day:disabled { opacity: .3; cursor: default; }
 .toast.big { font-size: 16px; font-weight: 700; padding: 12px 22px; background: var(--accent); color: var(--accent-ink); }
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(24px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg-top); padding: 9px 16px; border-radius: 999px; font-size: 13px; z-index: 30; max-width: calc(100% - 32px); text-align: center; }
 [hidden] { display: none !important; }
@@ -318,6 +339,24 @@ img.spr { image-rendering: pixelated; image-rendering: crisp-edges; display: blo
     <div class="filters" id="filters"></div>
     <input class="search" id="search" type="search" placeholder="保管庫を検索" autocomplete="off">
     <ul class="items" id="items"></ul>
+  </section>
+
+  <!-- 日記 -->
+  <section class="widget" aria-label="日記">
+    <div class="w-head"><h2>日記</h2><span class="count" id="diaryStreak"></span></div>
+    <div class="dnav">
+      <button type="button" class="x" id="dPrev" aria-label="前の日">‹</button>
+      <b id="dDate"></b>
+      <button type="button" class="x" id="dNext" aria-label="次の日">›</button>
+    </div>
+    <div class="chips-row" id="moods" role="group" aria-label="今日の気分"></div>
+    <textarea id="dText" class="dtext" placeholder="今日あったこと、感じたこと、明日やりたいこと" autocomplete="off"></textarea>
+    <div class="dauto" id="dAuto"></div>
+    <div class="actions">
+      <button type="button" id="dSave" class="dsave">書けた！</button>
+      <button type="button" id="dAsk">1週間をClaudeとふりかえる</button>
+    </div>
+    <div class="cal" id="cal"></div>
   </section>
 
   <!-- 設定 -->
@@ -588,7 +627,8 @@ img.spr { image-rendering: pixelated; image-rendering: crisp-edges; display: blo
     ["fin10", "財務の番人", "財務力の行動を10回", s => s.by.fin >= 10],
     ["all2", "オールラウンダー", "全ステータスLv.2以上", s => s.all2],
     ["lv5", "一人前", "Lv.5に到達", s => s.L >= 5],
-    ["lv10", "ベテラン", "Lv.10に到達", s => s.L >= 10]
+    ["lv10", "ベテラン", "Lv.10に到達", s => s.L >= 10],
+    ["diary7", "筆まめ", "日記を7日書く", s => s.diary >= 7]
   ];
   function achStats() {
     const g = totals(), log = state.game.log, by = {};
@@ -596,7 +636,7 @@ img.spr { image-rendering: pixelated; image-rendering: crisp-edges; display: blo
     return {
       n: log.length, streak: streakNow(), by,
       rare: log.filter(l => l.rar === "R" || l.rar === "E").length, epic: log.filter(l => l.rar === "E").length,
-      hard: log.filter(l => l.hard).length, q: log.filter(l => l.kind === "quest").length,
+      hard: log.filter(l => l.hard).length, q: log.filter(l => l.kind === "quest").length, diary: log.filter(l => l.kind === "diary").length,
       all2: STATS.every(x => levelFrom(g.stat[x[0]] || 0, SLV).L >= 2), L: levelFrom(g.xp, LV).L
     };
   }
@@ -898,9 +938,11 @@ img.spr { image-rendering: pixelated; image-rendering: crisp-edges; display: blo
   function simulate(st, rnd, withLog) {
     let hp = st.hp, stack = 0, f = 1, streak = 0, undying = !!st.sp.undying, kills = 0;
     const ev = []; const add = (t, b) => { if (withLog) ev.push([f, t, !!b]); };
+    let frac = 0;
     while (f < 1000) {
       const m = monsterOf(f);
       let ehp = 25 * Math.pow(1.12, f - 1) * (m.boss ? 3 : 1) * (0.75 + rnd() * 0.5);
+      const ehp0 = ehp;
       const eatk = 6 * Math.pow(1.10, f - 1) * (m.boss ? 1.35 : 1);
       let rounds = 0, killedByChain = false, bestChain = 0;
       while (ehp > 0 && hp > 0 && rounds++ < 60) {
@@ -915,7 +957,7 @@ img.spr { image-rendering: pixelated; image-rendering: crisp-edges; display: blo
         hp -= Math.max(eatk * 0.2, eatk - st.def) * (0.7 + rnd() * 0.6);
         if (hp <= 0 && undying) { hp = 1; undying = false; add("不屈が発動！HP1で踏みとどまった", true); }
       }
-      if (hp <= 0 || ehp > 0) { add(`${m.name}に倒された`, true); break; }
+      if (hp <= 0 || ehp > 0) { frac = Math.max(0, Math.min(1, 1 - ehp / ehp0)); add(`${m.name}に倒された`, true); break; }
       kills++; stack = Math.min(3, stack + st.onKill);
       if (st.sp.soul) hp = Math.min(st.hp, hp + st.hp * 0.1);
       hp = Math.min(st.hp, hp + st.hp * st.regen);
@@ -927,19 +969,36 @@ img.spr { image-rendering: pixelated; image-rendering: crisp-edges; display: blo
       if (rnd() < skipP) { f += 1; add("抜け道を発見！1階飛ばした"); }
       f++;
     }
-    return { floor: f - 1, kills, ev };
+    return { floor: f - 1, progress: f - 1 + frac, kills, ev };
   }
   function expectFloor(items) {
     const st = buildStats(items); let sum = 0;
-    for (let i = 1; i <= 24; i++) sum += simulate(st, mulberry(i * 7919), false).floor;
+    for (let i = 1; i <= 24; i++) sum += simulate(st, mulberry(i * 7919), false).progress;
     return sum / 24 + st.xp * 15 + st.luck * 10;
   }
   function tryEquip(item) {
     const cur = equipped();
     const cand = [...cur.filter(i => i.slot !== item.slot), item];
+    const holder = cur.find(i => i.slot === item.slot);
+    if (!holder) { state.dun.equip[item.slot] = item.id; return { up: true }; }
     const a = expectFloor(cur), b = expectFloor(cand);
-    if (b > a + 0.3) { state.dun.equip[item.slot] = item.id; return { up: true, from: a, to: b }; }
-    return { up: false, from: a, to: b };
+    if (b > a + 0.02) { state.dun.equip[item.slot] = item.id; return { up: true, from: a, to: b }; }
+    return { up: false, from: a, to: b, keep: holder.name };
+  }
+  // 装備の見直し：各部位について、持ち物の中から一番強いものを選び直す（以前の版で空欄のままだった部位の修正も兼ねる）
+  function optimizeAll() {
+    const d = state.dun;
+    for (const [slot] of SLOTS) {
+      const cands = d.items.filter(i => i.slot === slot).slice(0, 20);
+      if (!cands.length) continue;
+      let best = null, bestScore = -1;
+      for (const c of cands) {
+        const set = [...equipped().filter(i => i.slot !== slot), c];
+        const sc = expectFloor(set);
+        if (sc > bestScore) { bestScore = sc; best = c; }
+      }
+      if (best) d.equip[slot] = best.id;
+    }
   }
   function pushFeed(entry) { state.dun.feed.unshift({ id: uid(), at: Date.now(), ...entry }); if (state.dun.feed.length > 150) state.dun.feed.length = 150; }
 
@@ -955,7 +1014,7 @@ img.spr { image-rendering: pixelated; image-rendering: crisp-edges; display: blo
         const eq = tryEquip(it);
         const keep = new Set(Object.values(d.equip));
         if (d.items.length > 60) d.items = d.items.filter((x, i) => i < 60 || keep.has(x.id));
-        pushFeed({ type: "drop", item: it, equipped: eq.up, lvl: it.rar === "L" ? "fire" : it.rar === "R" || eq.up ? "hot" : "" });
+        pushFeed({ type: "drop", item: it, equipped: eq.up, keep: eq.keep || "", lvl: it.rar === "L" ? "fire" : it.rar === "R" || eq.up ? "hot" : "" });
         if (it.rar === "L") toast(`LEGENDARY DROP!《${it.name}》`, "drop");
         else if (it.rar === "R") toast(`レア装備《${it.name}》を入手！`, true);
         else toast(`《${it.name}》を入手${eq.up ? "・装備した" : ""}`);
@@ -1010,7 +1069,7 @@ img.spr { image-rendering: pixelated; image-rendering: crisp-edges; display: blo
       const tm = document.createElement("span"); tm.className = "tm"; tm.textContent = hm(f.at);
       if (f.type === "drop") {
         const nm = document.createElement("span"); nm.className = "r-" + f.item.rar; nm.textContent = `《${f.item.name}》`;
-        li.append(tm, document.createTextNode(`${RARITY[f.item.rar][0]}を入手 `), nm, document.createTextNode(f.equipped ? " → 装備した" : ""));
+        li.append(tm, document.createTextNode(`${RARITY[f.item.rar][0]}を入手 `), nm, document.createTextNode(f.equipped ? " → 装備した" : f.keep ? ` → 今の《${f.keep}》のほうが強いので保管` : ""));
         const fx = document.createElement("div"); fx.className = "ifx"; fx.textContent = itemFx(f.item); li.appendChild(fx);
       } else {
         const det = document.createElement("details"); const sm = document.createElement("summary");
@@ -1023,6 +1082,103 @@ img.spr { image-rendering: pixelated; image-rendering: crisp-edges; display: blo
     }
     $("feedMore").hidden = d.feed.length <= 6;
     $("feedMore").textContent = feedAll ? "閉じる" : `もっと見る（${d.feed.length}件）`;
+  }
+
+  /* ---------- diary ---------- */
+  state.diary = state.diary || {};
+  const MOODS = [["5", "最高", "#7FE0B4"], ["4", "良い", "#9FD8FF"], ["3", "普通", "#C9C6D8"], ["2", "いまいち", "#F2B880"], ["1", "最悪", "#FF8A7A"]];
+  const moodOf = k => MOODS.find(m => m[0] === k);
+  let dDay = ymd(new Date());
+  let calMonth = dDay.slice(0, 7);
+  let dTimer = null;
+  const fmtDay = ds => { const d = new Date(ds + "T00:00:00"); return `${d.getMonth() + 1}月${d.getDate()}日（${WD[d.getDay()]}）`; };
+  const shiftDay = (ds, n) => { const d = new Date(ds + "T00:00:00"); d.setDate(d.getDate() + n); return ymd(d); };
+  function diaryEntry(ds) { return state.diary[ds] || (state.diary[ds] = { text: "", mood: "", at: 0 }); }
+  function cleanDiary(ds) { const e = state.diary[ds]; if (e && !e.text.trim() && !e.mood) delete state.diary[ds]; }
+  function diaryStreak() {
+    const d = new Date(); if (!(state.diary[ymd(d)] && state.diary[ymd(d)].text.trim())) d.setDate(d.getDate() - 1);
+    let n = 0; while (state.diary[ymd(d)] && state.diary[ymd(d)].text.trim()) { n++; d.setDate(d.getDate() - 1); } return n;
+  }
+  $("dText").addEventListener("input", () => {
+    const e = diaryEntry(dDay); e.text = $("dText").value; e.at = Date.now();
+    clearTimeout(dTimer); dTimer = setTimeout(() => { cleanDiary(dDay); save(); renderCal(); }, 600);
+    syncDiarySave();
+  });
+  $("dPrev").addEventListener("click", () => { cleanDiary(dDay); dDay = shiftDay(dDay, -1); calMonth = dDay.slice(0, 7); renderDiary(true); });
+  $("dNext").addEventListener("click", () => { if (dDay >= ymd(new Date())) return; cleanDiary(dDay); dDay = shiftDay(dDay, 1); calMonth = dDay.slice(0, 7); renderDiary(true); });
+  function syncDiarySave() {
+    const today = ymd(new Date());
+    const done = state.game.log.some(l => l.ref === "d:" + dDay);
+    const b = $("dSave");
+    b.hidden = dDay !== today;
+    b.disabled = done || ($("dText").value.trim().length < 5);
+    b.textContent = done ? "今日の日記は記録済み（+20XP）" : "書けた！（+20XP）";
+  }
+  $("dSave").addEventListener("click", () => {
+    const today = ymd(new Date());
+    if (dDay !== today || $("dText").value.trim().length < 5) return;
+    const e = diaryEntry(dDay); e.text = $("dText").value; e.at = Date.now();
+    award("d:" + today, { kind: "diary", text: "日記を書いた", xp: 20, coin: 3, stat: "con" });
+    save(); render();
+  });
+  $("dAsk").addEventListener("click", () => {
+    const days = []; for (let i = 6; i >= 0; i--) days.push(shiftDay(ymd(new Date()), -i));
+    const body = days.map(ds => {
+      const e = state.diary[ds]; const m = e && e.mood ? moodOf(e.mood)[1] : "記録なし";
+      const done = state.game.log.filter(l => dayOf(l.at) === ds && l.kind !== "diary").map(l => l.text);
+      return `■${fmtDay(ds)}　気分：${m}\n${e && e.text.trim() ? e.text.trim() : "（日記なし）"}${done.length ? `\n達成したこと：${done.join("、")}` : ""}`;
+    }).join("\n\n");
+    askClaude(`以下は私の1週間の日記と、達成したことの記録です。読んで、次の順でまとめてください。\n1. この1週間で良かったこと（3つ）\n2. 気分や行動に見られるパターン\n3. 来週ためすと良さそうな小さな工夫（3つ）\n責めるような言い方は避けて、具体的に書いてください。\n\n${body}`);
+  });
+  function renderCal() {
+    const box = $("cal"); box.innerHTML = "";
+    const [y, mo] = calMonth.split("-").map(Number);
+    const head = document.createElement("div"); head.className = "mh";
+    const pv = document.createElement("button"); pv.type = "button"; pv.className = "x"; pv.textContent = "‹"; pv.setAttribute("aria-label", "前の月");
+    pv.addEventListener("click", () => { const d = new Date(y, mo - 2, 1); calMonth = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; renderCal(); });
+    const nx = document.createElement("button"); nx.type = "button"; nx.className = "x"; nx.textContent = "›"; nx.setAttribute("aria-label", "次の月");
+    nx.addEventListener("click", () => { const d = new Date(y, mo, 1); calMonth = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; renderCal(); });
+    const tl = document.createElement("span"); const cnt = Object.keys(state.diary).filter(k => k.startsWith(calMonth) && state.diary[k].text.trim()).length;
+    tl.textContent = `${y}年${mo}月　${cnt}日書いた`;
+    head.append(pv, tl, nx); box.appendChild(head);
+    WD.forEach(w => { const s = document.createElement("span"); s.className = "wd"; s.textContent = w; box.appendChild(s); });
+    const first = new Date(y, mo - 1, 1).getDay(); const days = new Date(y, mo, 0).getDate(); const today = ymd(new Date());
+    for (let i = 0; i < first; i++) box.appendChild(document.createElement("span"));
+    for (let dd = 1; dd <= days; dd++) {
+      const ds = `${y}-${pad(mo)}-${pad(dd)}`; const e = state.diary[ds];
+      const b = document.createElement("button"); b.type = "button"; b.className = "day"; b.textContent = dd;
+      if (e && (e.text.trim() || e.mood)) { b.classList.add("has"); b.style.background = e.mood ? moodOf(e.mood)[2] : "#C9C6D8"; }
+      if (ds === dDay) b.classList.add("sel");
+      if (ds === today) b.classList.add("today");
+      if (ds > today) b.disabled = true;
+      b.addEventListener("click", () => { cleanDiary(dDay); dDay = ds; renderDiary(true); });
+      box.appendChild(b);
+    }
+  }
+  function renderDiary(force) {
+    const today = ymd(new Date());
+    $("dDate").textContent = fmtDay(dDay) + (dDay === today ? "・今日" : "");
+    $("dNext").disabled = dDay >= today;
+    const e = state.diary[dDay];
+    const ta = $("dText");
+    if (force || document.activeElement !== ta) ta.value = e ? e.text : "";
+    const mb = $("moods"); mb.innerHTML = "";
+    for (const [k, l, c] of MOODS) {
+      const b = document.createElement("button"); b.type = "button"; b.className = "mood";
+      const i = document.createElement("i"); i.style.background = c; b.append(i, document.createTextNode(l));
+      b.setAttribute("aria-pressed", String(!!e && e.mood === k));
+      b.addEventListener("click", () => { const en = diaryEntry(dDay); en.mood = en.mood === k ? "" : k; en.at = Date.now(); cleanDiary(dDay); save(); renderDiary(); });
+      mb.appendChild(b);
+    }
+    const done = state.game.log.filter(l => dayOf(l.at) === dDay && l.kind !== "diary");
+    const auto = $("dAuto"); auto.innerHTML = "";
+    if (done.length) {
+      const h = document.createElement("b"); h.textContent = `この日に達成したこと ${done.length}件`; auto.appendChild(h);
+      done.slice(0, 6).forEach(l => { const s = document.createElement("span"); s.textContent = `・${l.text}（+${l.xp}XP）`; auto.appendChild(s); });
+    }
+    const st = diaryStreak(); $("diaryStreak").textContent = st ? `${st}日連続` : "";
+    syncDiarySave();
+    renderCal();
   }
 
   /* ---------- ToDo ---------- */
@@ -1246,7 +1402,7 @@ img.spr { image-rendering: pixelated; image-rendering: crisp-edges; display: blo
   }
   $("search").addEventListener("input", renderVault);
 
-  function render() { applyTheme(); renderGame(); renderDungeon(); renderQuests(); renderTodos(); renderVault(); renderSettings(); }
+  function render() { applyTheme(); renderGame(); renderDungeon(); renderQuests(); renderTodos(); renderDiary(); renderVault(); renderSettings(); }
 
   /* ---------- backup ---------- */
   const blobToDataURL = b => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.onerror = () => r(null); fr.readAsDataURL(b); });
@@ -1283,6 +1439,7 @@ img.spr { image-rendering: pixelated; image-rendering: crisp-edges; display: blo
       }
       if (data.state.dun && !(state.dun && state.dun.runs)) state.dun = data.state.dun;
       if (data.state.tagCfg && !state.tagCfg) state.tagCfg = data.state.tagCfg;
+      for (const [k, v] of Object.entries(data.state.diary || {})) if (!state.diary[k]) { state.diary[k] = v; added++; }
       if (data.state.theme) { state.theme = data.state.theme;
       }
       for (const [id, du] of Object.entries(data.images || {})) { try { const b = await (await fetch(du)).blob(); await idb.put(id, b); } catch {} }
@@ -1303,6 +1460,7 @@ img.spr { image-rendering: pixelated; image-rendering: crisp-edges; display: blo
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 
   drawTodoOpts();
+  if (!state.dun.opt2) { try { optimizeAll(); } catch {} state.dun.opt2 = true; save(); }
   setMode("vault");
   render();
 })();
