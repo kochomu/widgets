@@ -13,11 +13,13 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=DotGothic16&display=swap">
 <style>
 /* Layout: lock-screen style — big clock on a deep gradient, frosted widget cards stacked in one column: capture bar, ToDo, 保管庫 */
 :root {
   --bg-top: #1E2340;
+  --bg-mid: #2C2A5C;
+  --font-px: "DotGothic16", "Zen Kaku Gothic New", monospace;
   --bg-bot: #43307A;
   --glass: rgba(255,255,255,.10);
   --glass-strong: rgba(255,255,255,.16);
@@ -32,11 +34,11 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
-html { background: #2C2A5C; }
+html { background: var(--bg-mid); }
 html, body { margin: 0; }
 body {
   font-family: var(--font); color: var(--ink); font-size: 15px; line-height: 1.55;
-  background: linear-gradient(170deg, var(--bg-top) 0%, #2C2A5C 45%, var(--bg-bot) 100%);
+  background: linear-gradient(170deg, var(--bg-top) 0%, var(--bg-mid) 45%, var(--bg-bot) 100%);
   min-height: 100vh;
   background-color: var(--bg-top);
   -webkit-tap-highlight-color: transparent;
@@ -167,6 +169,49 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .quest.done .check { background: var(--ok); border-color: var(--ok); }
 .quest.done .check::after { content: ""; width: 6px; height: 11px; border: solid var(--accent-ink); border-width: 0 2.5px 2.5px 0; transform: translateY(-1px) rotate(45deg); }
 .qxp { font-size: 12px; color: var(--accent); white-space: nowrap; }
+/* pixel & dungeon */
+.px { font-family: var(--font-px); letter-spacing: .02em; }
+img.spr { image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
+.dun-top { display: flex; gap: 12px; align-items: stretch; }
+.stage { flex: 1; min-width: 0; height: 92px; border-radius: 14px; background: linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.15)); position: relative; overflow: hidden; display: flex; align-items: flex-end; justify-content: space-around; padding: 0 8px 8px; border: 1px solid var(--glass-line); }
+.stage::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 10px; background: repeating-linear-gradient(90deg, rgba(255,255,255,.10) 0 8px, rgba(255,255,255,.04) 8px 16px); }
+.stage img { position: relative; z-index: 1; }
+.stage .fl { position: absolute; top: 6px; left: 8px; font-size: 12px; color: var(--muted); z-index: 1; }
+@media (prefers-reduced-motion: no-preference) { .stage img.hero { animation: bob 1.2s steps(2) infinite; } @keyframes bob { 50% { transform: translateY(-2px); } } }
+.dun-rec { display: flex; flex-direction: column; gap: 4px; justify-content: center; min-width: 6.5em; }
+.dun-rec div { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); align-items: baseline; }
+.dun-rec b { font-size: 17px; color: var(--ink); font-weight: 400; }
+.cstats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; font-size: 12px; text-align: center; background: rgba(0,0,0,.2); border-radius: 12px; padding: 6px; }
+.cstats span { display: block; color: var(--muted); font-size: 10px; }
+.equips { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.equips li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: center; background: rgba(0,0,0,.2); border-radius: 12px; padding: 7px 10px; }
+.iname { font-family: var(--font-px); font-size: 14px; }
+.ifx { font-size: 11px; color: var(--muted); line-height: 1.45; }
+.r-N { color: var(--ink); } .r-M { color: #8FD3FF; } .r-R { color: #FFE066; } .r-L { color: #FF9E5E; text-shadow: 0 0 8px rgba(255,140,60,.55); }
+.syn { display: flex; gap: 6px; flex-wrap: wrap; }
+.syn span { font-size: 11px; padding: 2px 9px; border-radius: 999px; background: rgba(127,224,180,.15); border: 1px solid rgba(127,224,180,.45); }
+.feed-h { margin: 4px 0 0; font-size: 12px; color: var(--muted); letter-spacing: .06em; }
+.feed { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-family: var(--font-px); font-size: 13px; }
+.feed li { background: rgba(0,0,0,.22); border-radius: 10px; padding: 7px 10px; }
+.feed li.hot { border: 1px solid rgba(255,214,102,.55); }
+.feed li.fire { border: 1px solid rgba(255,140,60,.8); background: rgba(120,40,10,.35); }
+.feed .tm { color: var(--muted); font-size: 11px; margin-right: 6px; }
+.feed details summary { cursor: pointer; list-style: none; }
+.feed details summary::-webkit-details-marker { display: none; }
+.feed .ev { margin: 6px 0 0; padding: 0; list-style: none; font-size: 12px; color: var(--muted); display: flex; flex-direction: column; gap: 2px; }
+.feed .ev li { background: none; padding: 0; border: 0; }
+.feed .ev li.b { color: var(--ink); }
+.set-h { margin: 6px 0 2px; font-size: 12px; color: var(--muted); letter-spacing: .06em; }
+.hint-s { font-size: 12px; color: var(--muted); margin: 0 0 6px; }
+.themes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.themes button { border: 2px solid transparent; border-radius: 14px; height: 58px; cursor: pointer; color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: flex-end; padding: 6px 8px; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+.themes button[aria-pressed="true"] { border-color: var(--accent); }
+.tagman { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.tagman li { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; align-items: center; }
+.tagman input { border: 1px solid var(--glass-line); background: rgba(0,0,0,.22); color: var(--ink); border-radius: 10px; padding: 7px 10px; font: inherit; font-size: 16px; min-width: 0; width: 100%; }
+.tagman .n { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.tagman button { border: 1px solid rgba(255,138,122,.5); background: transparent; color: var(--danger); border-radius: 10px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
+.toast.drop { background: #2A1A0E; color: #FFB27A; border: 1px solid #FF9E5E; font-family: var(--font-px); font-size: 15px; padding: 12px 18px; }
 .toast.big { font-size: 16px; font-weight: 700; padding: 12px 22px; background: var(--accent); color: var(--accent-ink); }
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(24px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg-top); padding: 9px 16px; border-radius: 999px; font-size: 13px; z-index: 30; max-width: calc(100% - 32px); text-align: center; }
 [hidden] { display: none !important; }
@@ -233,6 +278,25 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
     </div>
   </section>
 
+  <!-- ダンジョン -->
+  <section class="widget dun" aria-label="ダンジョン">
+    <div class="w-head"><h2>ダンジョン</h2><span class="count" id="dunGold"></span></div>
+    <div class="dun-top">
+      <div class="stage" id="stage"></div>
+      <div class="dun-rec">
+        <div><span>最高到達</span><b class="px" id="dunBest">0F</b></div>
+        <div><span>前回</span><b class="px" id="dunLast">—</b></div>
+        <div><span>挑戦回数</span><b class="px" id="dunRuns">0</b></div>
+      </div>
+    </div>
+    <div class="cstats px" id="cstats"></div>
+    <ul class="equips" id="equips"></ul>
+    <div class="syn" id="syn"></div>
+    <h3 class="feed-h">冒険ログ</h3>
+    <ul class="feed" id="feed"></ul>
+    <button type="button" class="linkbtn" id="feedMore" hidden>もっと見る</button>
+  </section>
+
   <!-- 今日のクエスト -->
   <section class="widget" aria-label="今日のクエスト">
     <div class="w-head"><h2>今日のクエスト</h2><span class="count" id="questCount"></span></div>
@@ -254,6 +318,18 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
     <div class="filters" id="filters"></div>
     <input class="search" id="search" type="search" placeholder="保管庫を検索" autocomplete="off">
     <ul class="items" id="items"></ul>
+  </section>
+
+  <!-- 設定 -->
+  <section class="widget" aria-label="設定">
+    <div class="w-head"><h2>設定</h2><button type="button" class="linkbtn" id="toggleSettings">開く</button></div>
+    <div id="settingsBox" hidden>
+      <h3 class="set-h">壁紙と配色</h3>
+      <div class="themes" id="themes"></div>
+      <h3 class="set-h">タグの管理</h3>
+      <p class="hint-s">名前を書き換えると、保存済みのメモのタグもまとめて変わります。削除すると、メモからもそのタグが外れます。</p>
+      <ul class="tagman" id="tagman"></ul>
+    </div>
   </section>
 
   <div class="foot">
@@ -331,12 +407,34 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
     ["疑問", /([?？]\s*$|調べ|とは[?？]?\s*$|なぜ|どうやって|わからない|知りたい)/]
   ];
   const BASE_TAGS = RULES.map(r => r[0]);
+  const tagCfg = () => (state.tagCfg ||= { rename: {}, removed: [] });
+  const tagName = o => tagCfg().rename[o] || o;
+  const liveBase = () => BASE_TAGS.filter(o => !tagCfg().removed.includes(o));
   function autoTags(text, kind) {
-    const tags = RULES.filter(([, re]) => re.test(text)).map(([t]) => t);
-    if (kind === "link" && !tags.includes("読む") && !tags.includes("買い物")) tags.push("読む");
+    const live = liveBase();
+    const tags = RULES.filter(([t, re]) => live.includes(t) && re.test(text)).map(([t]) => tagName(t));
+    const read = live.includes("読む") ? tagName("読む") : null, shop = tagName("買い物");
+    if (kind === "link" && read && !tags.includes(read) && !tags.includes(shop)) tags.push(read);
     return tags;
   }
-  const allTags = () => [...BASE_TAGS, ...state.extraTags.filter(t => !BASE_TAGS.includes(t))];
+  const allTags = () => { const b = liveBase().map(tagName); return [...b, ...state.extraTags.filter(t => !b.includes(t))]; };
+  function renameTag(oldName, newName) {
+    newName = newName.trim().slice(0, 12);
+    if (!newName || newName === oldName) return;
+    const orig = BASE_TAGS.find(o => tagName(o) === oldName && !tagCfg().removed.includes(o));
+    if (orig) tagCfg().rename[orig] = newName;
+    state.extraTags = state.extraTags.map(t => t === oldName ? newName : t);
+    if (orig && state.extraTags.includes(newName)) state.extraTags = state.extraTags.filter(t => t !== newName);
+    for (const v of state.vault) if (v.tags.includes(oldName)) v.tags = [...new Set(v.tags.map(t => t === oldName ? newName : t))];
+    if (filter === oldName) filter = newName;
+  }
+  function removeTag(name) {
+    const orig = BASE_TAGS.find(o => tagName(o) === name && !tagCfg().removed.includes(o));
+    if (orig) tagCfg().removed.push(orig);
+    state.extraTags = state.extraTags.filter(t => t !== name);
+    for (const v of state.vault) v.tags = v.tags.filter(t => t !== name);
+    if (filter === name) filter = "all";
+  }
 
   const URL_RE = /https?:\/\/[^\s<>"'）)]+/i;
   const domainOf = u => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } };
@@ -452,11 +550,13 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
     if (state.game.log.some(l => l.ref === ref)) return;
     const before = levelFrom(totals().xp, LV).L;
     const bonus = streakBonus();
-    state.game.log.push({ id: uid(), ref, at: Date.now(), kind: e.kind, text: e.text, stat: e.stat, rar: e.rar || "", hard: !!e.hard, coin: e.coin, xp: e.xp + bonus, bonus });
+    const boost = Math.round(e.xp * xpBoost());
+    state.game.log.push({ id: uid(), ref, at: Date.now(), kind: e.kind, text: e.text, stat: e.stat, rar: e.rar || "", hard: !!e.hard, coin: e.coin, xp: e.xp + bonus + boost, bonus: bonus + boost });
     const after = levelFrom(totals().xp, LV).L;
-    toast(`+${e.xp + bonus}XP ${statName(e.stat)}${bonus ? `（連続ボーナス+${bonus}）` : ""}`);
+    toast(`+${e.xp + bonus + boost}XP ${statName(e.stat)}${bonus ? `（連続+${bonus}）` : ""}${boost ? `（装備+${boost}）` : ""}`);
     if (after > before) toast(`レベルアップ！ Lv.${after}`, true);
     checkAch();
+    adventure(ref, e);
   }
   const revoke = ref => { state.game.log = state.game.log.filter(l => l.ref !== ref); };
   function toggleTask(t) {
@@ -599,6 +699,330 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
       const b = document.createElement("span"); b.textContent = `+${l.xp}XP`;
       li.append(a, b); ll.appendChild(li);
     }
+  }
+
+  /* ---------- pixel sprites ---------- */
+  // 12x12のドット絵。文字が1ピクセル、"."は透明。
+  const PAL = { h: "#7A4A2A", s: "#F2C9A0", e: "#22202A", b: "#3F6FD8", B: "#2A4A9A", y: "#E8C23A", p: "#3A3A50", w: "#C8CCD8", W: "#FFFFFF",
+    g: "#5BCB6B", G: "#2E8A44", k: "#7A4AB8", K: "#4A2A78", r: "#E24A3A", R: "#9A2A22", o: "#B0A898", O: "#6E6860", n: "#8A5A2A", N: "#5A3A1A", c: "#7FE0F0", m: "#F07ACA" };
+  const SPR = {
+    hero: ["....hhhh....", "...hhhhhh...", "...hssssh...", "...sesess...", "....ssss....", "..BbbbbbB..w", ".sbbbbbbbs.w", ".sbbyyybbs.w", "..bbbbbbb.sw", "...pp..pp...", "...pp..pp...", "..ee....ee.."],
+    slime: ["............", "............", "............", ".....gg.....", "....gggg....", "...gWgggg...", "..gggggggg..", "..ggeggegg..", ".gggggggggg.", ".gggggggggg.", "..GGGGGGGG..", "............"],
+    bat: ["............", "............", "k..........k", "kk...KK...kk", "kkk.KKKK.kkk", "kkkkKrKrkkkk", ".kkkKKKKkkk.", "..kk.KK.kk..", "............", "............", "............", "............"],
+    skull: ["............", "...wwwwww...", "..wwwwwwww..", "..wweewwee..", "..wweewwee..", "..wwwwwwww..", "...wwwwww...", "...w.ww.w...", "............", "..o..o..o...", ".oooooooooo.", "............"],
+    golem: ["....oooo....", "...oOooOo...", "...oeooeo...", "..oooooooo..", ".ooOooooOoo.", "oooooooooooo", "oo.oooooo.oo", "oo.oOooOo.oo", "...oooooo...", "...oo..oo...", "..ooo..ooo..", "............"],
+    dragon: ["..r......r..", "..rr....rr..", "...rrrrrr...", "..rryrryrr..", "..rrrrrrrr..", "R.rrWrrWrr.R", "RRrrrrrrrrRR", "RRRrrrrrrRRR", ".R.rrrrrr.R.", "...rr..rr...", "..rrr..rrr..", "............"],
+    chest: ["............", "............", "..NNNNNNNN..", ".NnnnnnnnnN.", ".NnnnnnnnnN.", ".NNNNyyNNNN.", ".NnnnyynnnN.", ".NnnnnnnnnN.", ".NnnnnnnnnN.", ".NNNNNNNNNN.", "............", "............"],
+    weapon: ["..........ww", ".........wWw", "........wWw.", ".......wWw..", "......wWw...", ".....wWw....", "..y.wWw.....", "...yWw......", "...ny.......", "..n..y......", ".n..........", "............"],
+    armor: ["............", "..wwwwwwww..", ".wWwwwwwwww.", ".wwbbbbbbww.", ".wwbbyybbww.", ".wwbbyybbww.", ".wwbbbbbbww.", "..wwbbbbww..", "...wwbbww...", "....wwww....", ".....ww.....", "............"],
+    acc: ["............", "....yyyy....", "...y....y...", "..y......y..", "..y......y..", "..y......y..", "...y....y...", "....yccy....", "....ycWy....", ".....yy.....", "............", "............"]
+  };
+  const sprCache = {};
+  function sprite(name, scale) {
+    const key = name + scale;
+    if (!sprCache[key]) {
+      const rows = SPR[name]; const c = document.createElement("canvas"); c.width = c.height = 12 * scale;
+      const x = c.getContext("2d");
+      rows.forEach((row, j) => { for (let i = 0; i < 12; i++) { const col = PAL[row[i]]; if (col) { x.fillStyle = col; x.fillRect(i * scale, j * scale, scale, scale); } } });
+      sprCache[key] = c.toDataURL();
+    }
+    const img = document.createElement("img"); img.className = "spr"; img.src = sprCache[key]; img.alt = ""; img.width = img.height = 12 * scale;
+    return img;
+  }
+
+  /* ---------- themes ---------- */
+  const THEMES = [
+    ["night", "夜空", "#1E2340", "#2C2A5C", "#43307A", "#FFD666"],
+    ["sea", "深海", "#08202F", "#0F3B52", "#17666F", "#7FF0E0"],
+    ["forest", "森", "#122219", "#1D3A28", "#3A5A2C", "#E8D27A"],
+    ["sunset", "夕焼け", "#2A1838", "#6A2C4C", "#C0563E", "#FFD08A"],
+    ["sakura", "桜", "#36203A", "#66385A", "#B06A88", "#FFE3EE"],
+    ["mono", "モノクロ", "#111214", "#1F2125", "#30343A", "#E8E8E8"]
+  ];
+  function applyTheme() {
+    const t = THEMES.find(x => x[0] === state.theme) || THEMES[0];
+    const r = document.documentElement.style;
+    r.setProperty("--bg-top", t[2]); r.setProperty("--bg-mid", t[3]); r.setProperty("--bg-bot", t[4]); r.setProperty("--accent", t[5]);
+    const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute("content", t[2]);
+  }
+  let settingsOpen = false;
+  $("toggleSettings").addEventListener("click", () => { settingsOpen = !settingsOpen; renderSettings(); });
+  function renderSettings() {
+    $("settingsBox").hidden = !settingsOpen;
+    $("toggleSettings").textContent = settingsOpen ? "閉じる" : "開く";
+    if (!settingsOpen) return;
+    const th = $("themes"); th.innerHTML = "";
+    for (const t of THEMES) {
+      const b = document.createElement("button"); b.type = "button"; b.textContent = t[1];
+      b.style.background = `linear-gradient(160deg, ${t[2]}, ${t[3]} 50%, ${t[4]})`;
+      b.setAttribute("aria-pressed", String((state.theme || "night") === t[0]));
+      b.addEventListener("click", () => { state.theme = t[0]; save(); render(); });
+      th.appendChild(b);
+    }
+    const tm = $("tagman"); tm.innerHTML = "";
+    for (const name of allTags()) {
+      const li = document.createElement("li");
+      const inp = document.createElement("input"); inp.value = name; inp.maxLength = 12; inp.id = "tagname-" + name; inp.setAttribute("aria-label", `タグ「${name}」の名前`);
+      const commit = () => { const v = inp.value.trim(); if (v && v !== name) { renameTag(name, v); save(); render(); toast(`「${name}」を「${v}」に変えました`); } else inp.value = name; };
+      inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); inp.blur(); } });
+      inp.addEventListener("blur", commit);
+      const n = document.createElement("span"); n.className = "n"; n.textContent = `${state.vault.filter(v => v.tags.includes(name)).length}件`;
+      let armed = false;
+      const del = document.createElement("button"); del.type = "button"; del.textContent = "削除";
+      del.addEventListener("click", () => {
+        if (!armed) { armed = true; del.textContent = "本当に削除"; return; }
+        removeTag(name); save(); render(); toast(`タグ「${name}」を削除しました`);
+      });
+      li.append(inp, n, del); tm.appendChild(li);
+    }
+  }
+
+  /* ---------- dungeon ---------- */
+  // 仕組み：タスク達成 → 確率で装備ドロップ → 自動装備（実際と同じ戦闘ルールで試算して強いほう）→ すぐにダンジョンを1階から自動攻略。
+  state.dun = Object.assign({ equip: { weapon: null, armor: null, acc: null }, items: [], feed: [], best: 0, last: 0, runs: 0, dropped: [], sinceRare: 0, gold: 0 }, state.dun || {});
+  const SLOTS = [["weapon", "武器"], ["armor", "防具"], ["acc", "装飾品"]];
+  const BASES = {
+    weapon: ["剣", "短剣", "斧", "槍", "杖", "弓", "刀"],
+    armor: ["鎧", "ローブ", "盾", "外套", "兜", "籠手"],
+    acc: ["指輪", "首飾り", "懐中時計", "羅針盤", "手帳", "鍵", "靴", "お守り"]
+  };
+  const FX = {
+    atk: { tag: "攻撃", base: l => 3 + l * 0.8, txt: v => `攻撃+${Math.round(v)}`, pre: ["猛き", "剛力の", "鋭刃の"] },
+    def: { tag: "守り", base: l => 1 + l * 0.4, txt: v => `守り+${Math.round(v)}`, pre: ["堅牢な", "鉄壁の"] },
+    hp: { tag: "体力", base: l => 10 + l * 3, txt: v => `HP+${Math.round(v)}`, pre: ["頑健な", "巨人の"] },
+    crit: { tag: "会心", base: () => 0.04, txt: v => `会心率+${pc(v)}`, pre: ["見切りの", "鷹の目の"] },
+    critDmg: { tag: "会心", base: () => 0.25, txt: v => `会心ダメージ+${pc(v)}`, pre: ["必殺の", "急所穿ちの"] },
+    dbl: { tag: "連撃", base: () => 0.06, txt: v => `追加攻撃+${pc(v)}`, pre: ["疾風の", "双牙の"] },
+    onKill: { tag: "撃破", base: () => 0.03, txt: v => `撃破ごとに攻撃+${pc(v)}`, pre: ["屍積みの", "狩人の"] },
+    steal: { tag: "吸収", base: () => 0.04, txt: v => `与ダメの${pc(v)}を吸収`, pre: ["血吸いの", "貪りの"] },
+    regen: { tag: "回復", base: () => 0.04, txt: v => `階層ごとにHP${pc(v)}回復`, pre: ["癒しの", "芽吹きの"] },
+    berserk: { tag: "背水", base: () => 0.4, txt: v => `HPが減るほど攻撃 最大+${pc(v)}`, pre: ["捨て身の", "崖っぷちの"] },
+    skip: { tag: "踏破", base: () => 0.03, txt: v => `${pc(v)}で次の階層を飛ばす`, pre: ["早駆けの", "抜け道の"] },
+    xp: { tag: "経験", base: () => 0.05, txt: v => `現実の経験値+${pc(v)}`, pre: ["学びの", "賢者の"] },
+    luck: { tag: "幸運", base: () => 0.05, txt: v => `幸運+${pc(v)}`, pre: ["招き猫の", "四つ葉の"] }
+  };
+  const SPECIALS = {
+    undying: ["不屈", "1回だけ致命傷をHP1で耐える"],
+    soul: ["吸魂", "敵を倒すたびHP10%回復"],
+    accel: ["加速", "連続で踏破するほど階層を飛ばしやすくなる"],
+    star: ["天運", "会心率が2倍"],
+    chain: ["連鎖", "追加攻撃でとどめを刺すと次の階も一撃で突破"]
+  };
+  const CAPS = { crit: 0.75, dbl: 0.6, skip: 0.35, xp: 0.5, steal: 0.3, regen: 0.3, luck: 0.5 };
+  const pc = v => Math.round(v * 100) + "%";
+  const RARITY = { N: ["ノーマル", 1, 0], M: ["マジック", 1, 1], R: ["レア", 1.25, 3], L: ["レジェンダリー", 1.6, 4] };
+  const ODD = ["穴あきの", "やけに重い", "誰かの忘れ物の", "ちょっと湿った", "値札付きの", "伝説っぽい"];
+  const EPITHET = ["月影", "雷鳴", "黄昏", "無銘", "業火", "氷華", "夜叉", "白夜"];
+  const LEGEND = ["終わらぬ探求者の", "永劫を刻む", "三日坊主を許さぬ", "深淵を覗く", "星を喰らう", "名もなき英雄の", "世界の果ての", "締切を断つ"];
+  const pickOne = (a, rnd) => a[Math.floor(rnd() * a.length)];
+  function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+  function playerLevel() { return levelFrom(totals().xp, LV).L; }
+  function equipped() { return SLOTS.map(([k]) => state.dun.items.find(i => i.id === state.dun.equip[k])).filter(Boolean); }
+
+  function genItem(rnd, luck) {
+    const d = state.dun;
+    let roll = rnd(), rar = "N";
+    const pL = 0.01 * (1 + luck * 2), pR = 0.07 * (1 + luck), pM = 0.25;
+    if (roll < pL) rar = "L"; else if (roll < pL + pR) rar = "R"; else if (roll < pL + pR + pM) rar = "M";
+    if ((rar === "N" || rar === "M") && d.sinceRare >= 15) rar = "R";
+    d.sinceRare = rar === "R" || rar === "L" ? 0 : d.sinceRare + 1;
+    const slot = pickOne(SLOTS, rnd)[0];
+    const base = pickOne(BASES[slot], rnd);
+    const ilvl = playerLevel() + Math.floor(d.best / 10);
+    const [, mult, nAff] = RARITY[rar];
+    const v = k => FX[k].base(ilvl) * mult * (0.4 + rnd() * 0.8);
+    const fx = [];
+    if (slot === "weapon") fx.push({ k: "atk", v: v("atk") * 1.6 });
+    if (slot === "armor") { fx.push({ k: "def", v: v("def") * 1.4 }); fx.push({ k: "hp", v: v("hp") }); }
+    let extreme = false;
+    const keys = Object.keys(FX);
+    const count = rar === "M" ? 1 + Math.floor(rnd() * 2) : nAff + (slot === "acc" && rar === "N" ? 1 : 0);
+    const used = new Set(fx.map(f => f.k));
+    for (let i = 0; i < count; i++) {
+      let k = pickOne(keys, rnd), guard = 0; while (used.has(k) && guard++ < 20) k = pickOne(keys, rnd);
+      used.add(k);
+      let val = v(k);
+      if (rnd() < 0.03) { val *= 2.2; extreme = true; }
+      fx.push({ k, v: val });
+    }
+    const special = rar === "L" ? pickOne(Object.keys(SPECIALS), rnd) : (rar === "R" && rnd() < 0.15 ? pickOne(Object.keys(SPECIALS), rnd) : null);
+    const affixes = fx.filter((f, i) => !(slot === "weapon" && i === 0) && !(slot === "armor" && i < 2));
+    const top = [...affixes].sort((a, b) => b.v / FX[b.k].base(ilvl) - a.v / FX[a.k].base(ilvl));
+    let name;
+    if (rar === "L") name = pickOne(LEGEND, rnd) + base;
+    else if (rar === "R") name = (top[0] ? pickOne(FX[top[0].k].pre, rnd) : "") + base + "「" + pickOne(EPITHET, rnd) + "」";
+    else if (rar === "M") name = (top[0] ? pickOne(FX[top[0].k].pre, rnd) : "") + base;
+    else name = (rnd() < 0.5 ? pickOne(["古びた", "素朴な", "見習いの", "ふつうの"], rnd) : "") + base;
+    if (rar !== "L" && rnd() < 0.04) name = pickOne(ODD, rnd) + name;
+    if (extreme) name = "極・" + name;
+    return { id: uid(), slot, base, rar, ilvl, name, fx: fx.map(f => ({ k: f.k, v: Math.round(f.v * 1000) / 1000 })), special, at: Date.now() };
+  }
+
+  function playerBase() {
+    const g = totals(); const L = levelFrom(g.xp, LV).L; const s = k => levelFrom(g.stat[k] || 0, SLV).L;
+    return { L, hp: 100 + 12 * L + 8 * s("con"), atk: 10 + 3 * L + 3 * s("act"), def: 2 + L + s("fin"), crit: 0.05 + 0.01 * s("int"), critDmg: 1.5, dbl: 0.02 * s("cre"),
+      onKill: 0, steal: 0, regen: 0.01 * s("con"), berserk: 0, skip: 0, xp: 0, luck: 0.01 * s("fin"), sp: {}, syn: [] };
+  }
+  function buildStats(items) {
+    const st = playerBase(); const tagCount = {};
+    for (const it of items) {
+      const tags = new Set();
+      for (const f of it.fx) { if (f.k === "critDmg") st.critDmg += f.v; else st[f.k] += f.v; tags.add(FX[f.k].tag); }
+      tags.forEach(t => { tagCount[t] = (tagCount[t] || 0) + 1; });
+      if (it.special) st.sp[it.special] = true;
+    }
+    const has = (t, n) => (tagCount[t] || 0) >= n;
+    if (has("連撃", 2)) { st.dbl += 0.10; st.syn.push("疾風連舞：追加攻撃+10%"); }
+    if (has("撃破", 2)) { st.onKill *= 1.5; st.syn.push("屍山血河：撃破ボーナス1.5倍"); }
+    if (has("背水", 2)) { st.berserk *= 1.5; st.syn.push("背水の陣：背水1.5倍"); }
+    if (has("会心", 2)) { st.critDmg += 0.5; st.syn.push("必殺の型：会心ダメージ+50%"); }
+    if (has("回復", 1) && has("吸収", 1)) { st.steal *= 1.3; st.regen *= 1.3; st.syn.push("不滅の泉：回復と吸収1.3倍"); }
+    if (has("踏破", 2)) { st.skip += 0.05; st.syn.push("抜け道探し：飛ばし+5%"); }
+    if (has("経験", 2)) { st.xp += 0.10; st.syn.push("学びの連鎖：経験値+10%"); }
+    if (st.sp.star) st.crit *= 2;
+    for (const k in CAPS) st[k] = Math.min(st[k], CAPS[k]);
+    st.atk = Math.round(st.atk); st.def = Math.round(st.def); st.hp = Math.round(st.hp);
+    return st;
+  }
+  const xpBoost = () => buildStats(equipped()).xp;
+
+  const MONS = [["スライム", "slime"], ["コウモリ", "bat"], ["ガイコツ", "skull"], ["ゴーレム", "golem"]];
+  const ELEM = ["", "毒", "炎", "闇", "雷", "古代"];
+  function monsterOf(f) {
+    const tier = Math.floor((f - 1) / 10);
+    const [n, spr] = MONS[tier % MONS.length]; const el = ELEM[Math.min(Math.floor(tier / MONS.length), ELEM.length - 1)];
+    if (f % 10 === 0) return { name: `${el}${n}の王`, spr: f % 50 === 0 ? "dragon" : spr, boss: true };
+    return { name: el + n, spr, boss: false };
+  }
+  function simulate(st, rnd, withLog) {
+    let hp = st.hp, stack = 0, f = 1, streak = 0, undying = !!st.sp.undying, kills = 0;
+    const ev = []; const add = (t, b) => { if (withLog) ev.push([f, t, !!b]); };
+    while (f < 1000) {
+      const m = monsterOf(f);
+      let ehp = 25 * Math.pow(1.12, f - 1) * (m.boss ? 3 : 1) * (0.75 + rnd() * 0.5);
+      const eatk = 6 * Math.pow(1.10, f - 1) * (m.boss ? 1.35 : 1);
+      let rounds = 0, killedByChain = false, bestChain = 0;
+      while (ehp > 0 && hp > 0 && rounds++ < 60) {
+        let chain = 0;
+        do {
+          let dmg = st.atk * (1 + stack) * (1 + st.berserk * (1 - hp / st.hp)) * (0.8 + rnd() * 0.4);
+          if (rnd() < st.crit) dmg *= st.critDmg;
+          ehp -= dmg; hp = Math.min(st.hp, hp + dmg * st.steal); chain++;
+        } while (ehp > 0 && chain < 6 && rnd() < st.dbl);
+        bestChain = Math.max(bestChain, chain);
+        if (ehp <= 0) { killedByChain = chain > 1; break; }
+        hp -= Math.max(eatk * 0.2, eatk - st.def) * (0.7 + rnd() * 0.6);
+        if (hp <= 0 && undying) { hp = 1; undying = false; add("不屈が発動！HP1で踏みとどまった", true); }
+      }
+      if (hp <= 0 || ehp > 0) { add(`${m.name}に倒された`, true); break; }
+      kills++; stack = Math.min(3, stack + st.onKill);
+      if (st.sp.soul) hp = Math.min(st.hp, hp + st.hp * 0.1);
+      hp = Math.min(st.hp, hp + st.hp * st.regen);
+      if (bestChain >= 4) add(`連撃×${bestChain}！`);
+      if (m.boss) add(`${m.name}を撃破！`, true);
+      streak++;
+      const skipP = Math.min(0.6, st.skip + (st.sp.accel ? Math.min(0.25, streak * 0.01) : 0));
+      if (st.sp.chain && killedByChain && rnd() < 0.5) { add("連鎖発動！次の階を一撃で突破"); f += 1; kills++; }
+      if (rnd() < skipP) { f += 1; add("抜け道を発見！1階飛ばした"); }
+      f++;
+    }
+    return { floor: f - 1, kills, ev };
+  }
+  function expectFloor(items) {
+    const st = buildStats(items); let sum = 0;
+    for (let i = 1; i <= 24; i++) sum += simulate(st, mulberry(i * 7919), false).floor;
+    return sum / 24 + st.xp * 15 + st.luck * 10;
+  }
+  function tryEquip(item) {
+    const cur = equipped();
+    const cand = [...cur.filter(i => i.slot !== item.slot), item];
+    const a = expectFloor(cur), b = expectFloor(cand);
+    if (b > a + 0.3) { state.dun.equip[item.slot] = item.id; return { up: true, from: a, to: b }; }
+    return { up: false, from: a, to: b };
+  }
+  function pushFeed(entry) { state.dun.feed.unshift({ id: uid(), at: Date.now(), ...entry }); if (state.dun.feed.length > 150) state.dun.feed.length = 150; }
+
+  function adventure(ref, e) {
+    const d = state.dun;
+    let st = buildStats(equipped());
+    if (!d.dropped.includes(ref)) {
+      d.dropped.push(ref); if (d.dropped.length > 600) d.dropped.splice(0, 100);
+      const base = e.kind === "quest" ? 0.3 : ({ C: 0.3, U: 0.45, R: 0.7, E: 1 }[e.rar] || 0.3);
+      if (Math.random() < Math.min(1, base + st.luck)) {
+        const it = genItem(Math.random, st.luck);
+        d.items.unshift(it);
+        const eq = tryEquip(it);
+        const keep = new Set(Object.values(d.equip));
+        if (d.items.length > 60) d.items = d.items.filter((x, i) => i < 60 || keep.has(x.id));
+        pushFeed({ type: "drop", item: it, equipped: eq.up, lvl: it.rar === "L" ? "fire" : it.rar === "R" || eq.up ? "hot" : "" });
+        if (it.rar === "L") toast(`LEGENDARY DROP!《${it.name}》`, "drop");
+        else if (it.rar === "R") toast(`レア装備《${it.name}》を入手！`, true);
+        else toast(`《${it.name}》を入手${eq.up ? "・装備した" : ""}`);
+        st = buildStats(equipped());
+      }
+    }
+    const res = simulate(st, Math.random, true);
+    const prev = d.best;
+    d.runs++; d.last = res.floor; d.gold += res.kills;
+    const record = res.floor > prev; if (record) d.best = res.floor;
+    let ev = res.ev;
+    if (ev.length > 14) ev = [...ev.slice(0, 3), [0, "……", false], ...ev.slice(-10)];
+    const jump = res.floor - prev;
+    pushFeed({ type: "run", floor: res.floor, prev, record, ev, lvl: record && jump >= 10 ? "fire" : record ? "hot" : "" });
+    if (record && jump >= 10) toast(`大幅更新！ ${prev}F → ${res.floor}F`, "drop");
+    else if (record) toast(`最高記録更新！ ${res.floor}F`, true);
+  }
+
+  let feedAll = false;
+  $("feedMore").addEventListener("click", () => { feedAll = !feedAll; renderDungeon(); });
+  const hm = ts => { const d = new Date(ts); return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${pad(d.getMinutes())}`; };
+  function itemFx(it) { return it.fx.map(f => FX[f.k].txt(f.v)).concat(it.special ? [`【${SPECIALS[it.special][0]}】${SPECIALS[it.special][1]}`] : []).join(" / "); }
+  function renderDungeon() {
+    const d = state.dun; const items = equipped(); const st = buildStats(items);
+    $("dunBest").textContent = d.best + "F"; $("dunLast").textContent = d.runs ? d.last + "F" : "—"; $("dunRuns").textContent = d.runs;
+    $("dunGold").textContent = `${d.gold.toLocaleString("ja-JP")} G`;
+    const stg = $("stage"); stg.innerHTML = "";
+    const fl = document.createElement("span"); fl.className = "fl px"; fl.textContent = `B${Math.max(1, d.last)}F`; stg.appendChild(fl);
+    const hero = sprite("hero", 4); hero.classList.add("hero"); stg.appendChild(hero);
+    const mon = monsterOf(Math.max(1, d.last + 1)); stg.appendChild(sprite(mon.spr, mon.boss ? 5 : 4));
+    $("cstats").innerHTML = "";
+    for (const [l, v] of [["HP", st.hp], ["攻撃", st.atk], ["守り", st.def], ["会心", pc(st.crit)]]) {
+      const div = document.createElement("div"); const sp = document.createElement("span"); sp.textContent = l; div.append(sp, document.createTextNode(v)); $("cstats").appendChild(div);
+    }
+    const ul = $("equips"); ul.innerHTML = "";
+    for (const [k, l] of SLOTS) {
+      const it = items.find(i => i.slot === k);
+      const li = document.createElement("li"); li.appendChild(sprite(k, 2));
+      const box = document.createElement("div"); box.style.minWidth = "0";
+      const nm = document.createElement("div"); nm.className = "iname " + (it ? "r-" + it.rar : ""); nm.textContent = it ? `《${it.name}》` : `${l}なし`;
+      const fx = document.createElement("div"); fx.className = "ifx"; fx.textContent = it ? itemFx(it) : "タスクを達成すると、ときどき装備が手に入ります";
+      box.append(nm, fx); li.appendChild(box); ul.appendChild(li);
+    }
+    const syn = $("syn"); syn.innerHTML = "";
+    st.syn.forEach(t => { const s = document.createElement("span"); s.textContent = t; syn.appendChild(s); });
+    Object.keys(st.sp).forEach(k => { const s = document.createElement("span"); s.textContent = `【${SPECIALS[k][0]}】`; syn.appendChild(s); });
+    const feed = $("feed"); feed.innerHTML = "";
+    const list = feedAll ? d.feed.slice(0, 80) : d.feed.slice(0, 6);
+    if (!list.length) { const li = document.createElement("li"); li.textContent = "まだ冒険していません。ToDoかクエストを達成すると、勇者がダンジョンに潜ります。"; feed.appendChild(li); }
+    for (const f of list) {
+      const li = document.createElement("li"); if (f.lvl) li.className = f.lvl;
+      const tm = document.createElement("span"); tm.className = "tm"; tm.textContent = hm(f.at);
+      if (f.type === "drop") {
+        const nm = document.createElement("span"); nm.className = "r-" + f.item.rar; nm.textContent = `《${f.item.name}》`;
+        li.append(tm, document.createTextNode(`${RARITY[f.item.rar][0]}を入手 `), nm, document.createTextNode(f.equipped ? " → 装備した" : ""));
+        const fx = document.createElement("div"); fx.className = "ifx"; fx.textContent = itemFx(f.item); li.appendChild(fx);
+      } else {
+        const det = document.createElement("details"); const sm = document.createElement("summary");
+        sm.append(tm, document.createTextNode(f.record ? `${f.floor}Fまで到達！最高記録更新（${f.prev}F→${f.floor}F）` : `${f.floor}Fまで到達`));
+        const ev = document.createElement("ul"); ev.className = "ev";
+        for (const [fl2, t, b] of f.ev) { const e = document.createElement("li"); if (b) e.className = "b"; e.textContent = fl2 ? `${fl2}F：${t}` : t; ev.appendChild(e); }
+        det.append(sm, ev); if (f.lvl === "fire") det.open = true; li.appendChild(det);
+      }
+      feed.appendChild(li);
+    }
+    $("feedMore").hidden = d.feed.length <= 6;
+    $("feedMore").textContent = feedAll ? "閉じる" : `もっと見る（${d.feed.length}件）`;
   }
 
   /* ---------- ToDo ---------- */
@@ -822,7 +1246,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
   }
   $("search").addEventListener("input", renderVault);
 
-  function render() { renderGame(); renderQuests(); renderTodos(); renderVault(); }
+  function render() { applyTheme(); renderGame(); renderDungeon(); renderQuests(); renderTodos(); renderVault(); renderSettings(); }
 
   /* ---------- backup ---------- */
   const blobToDataURL = b => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.onerror = () => r(null); fr.readAsDataURL(b); });
@@ -857,6 +1281,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
         for (const l of data.state.game.log || []) if (!haveL.has(l.ref)) state.game.log.push(l);
         Object.assign(state.game.ach, data.state.game.ach || {});
       }
+      if (data.state.dun && !(state.dun && state.dun.runs)) state.dun = data.state.dun;
+      if (data.state.tagCfg && !state.tagCfg) state.tagCfg = data.state.tagCfg;
+      if (data.state.theme) { state.theme = data.state.theme;
+      }
       for (const [id, du] of Object.entries(data.images || {})) { try { const b = await (await fetch(du)).blob(); await idb.put(id, b); } catch {} }
       state.vault.sort((a, b) => b.createdAt - a.createdAt);
       save(); render(); toast(`${added}件を戻しました`);
@@ -869,8 +1297,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
   function nextToast() {
     const t = $("toast"); const n = toastQ.shift();
     if (!n) { toastBusy = false; t.hidden = true; return; }
-    toastBusy = true; t.textContent = n[0]; t.className = "toast" + (n[1] ? " big" : ""); t.hidden = false;
-    setTimeout(nextToast, n[1] ? 2600 : 1900);
+    toastBusy = true; t.textContent = n[0]; t.className = "toast" + (n[1] === true ? " big" : n[1] ? " " + n[1] : ""); t.hidden = false;
+    setTimeout(nextToast, n[1] === "drop" ? 3400 : n[1] ? 2600 : 1900);
   }
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 
